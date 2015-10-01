@@ -1,0 +1,14 @@
+sudo apt-get update
+sudo apt-get install vnc4server
+vncserver :0
+sudo vi ~/.vnc/xstartup
+(go to last line using the down-arrow key)
+dd
+dd
+o
+gnome-session&
+[ESC]
+ZZ
+vncserver -geometry 1024x768 -depth 16 :1
+
+Despues entrar con TightVNCServer, password es sdlc1102
