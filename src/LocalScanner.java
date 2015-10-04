@@ -170,6 +170,7 @@ public class LocalScanner extends Scanner {
 
 			/* TODO linkInfo SERA NULL SI EL AUTO ESTA CHOCADO */
 			String[] linkInfo = getDataFromPost(link);
+			
 
 			if (linkInfo != null) {
 				// Primero revisamos si es un recomendado o no
@@ -188,7 +189,16 @@ public class LocalScanner extends Scanner {
 								Integer priceUndLimit = (int) ((1 - PORCENT_RECOMEND)* Integer.parseInt(item[6].replaceAll("[\\s.]", "")));
 								// Revisamos si es un recomendado
 								if (Integer.parseInt(linkInfo[7].replaceAll("[\\s.]", "")) <= priceUndLimit) {
-									recomended.add(linkInfo);
+									String[] allInfo = new String[linkInfo.length + 4];
+									for(int i=0; i<linkInfo.length; i++){
+										allInfo[i] = linkInfo[i];
+									}
+									allInfo[linkInfo.length] = item[3];
+									allInfo[linkInfo.length+1] = item[4];
+									allInfo[linkInfo.length+2] = item[5];
+									allInfo[linkInfo.length+3] = item[6];
+									
+									recomended.add(allInfo);
 									MainWindow.insertRecomended(linkInfo);
 								}
 
@@ -239,7 +249,10 @@ public class LocalScanner extends Scanner {
 				content = content + "\tKilometros: " + car[5] + "\n";
 				content = content + "\tTransmision: " + car[6] + "\n";
 				content = content + "\tPrecio: " + car[7] + "\n";
-				content = content + "\tLink: " + car[8] + "\n\n";
+				content = content + "\tLink: " + car[8] + "\n";
+				content = content + "\tRef: Precio Min = "+car[car.length-3];
+				content = content + "\tRef: Precio Max = "+car[car.length-2];
+				content = content + "\tRef: Precio Prom = "+car[car.length-1]+"\n\n";
 				count++;
 			}
 			Email.sendSimpleEmail("Recomended Yapo cars", content, Usuarios.getAllEmails());
@@ -351,13 +364,12 @@ public class LocalScanner extends Scanner {
 	}
 	
 	public static boolean carIsUseless(String webPageSource){
-		if ((webPageSource.toLowerCase().contains("chocado") || webPageSource.toLowerCase().contains("chokado")
-				|| webPageSource.toLowerCase().contains("chocada") || webPageSource.toLowerCase().contains("chocad")
-				|| webPageSource.toLowerCase().contains("chocao") || webPageSource.toLowerCase().contains("shocado")
-				|| webPageSource.toLowerCase().contains("chokdo") || webPageSource.toLowerCase().contains("en prenda")
-				|| webPageSource.toLowerCase().contains("con prenda") || webPageSource.toLowerCase().contains("choque")
-				|| webPageSource.toLowerCase().contains("choke") || webPageSource.toLowerCase().contains("shoke")
-				|| webPageSource.toLowerCase().contains("tiene prenda") || webPageSource.toLowerCase().contains("en desarme"))
+		if ((webPageSource.toLowerCase().contains("chocado") 		|| webPageSource.toLowerCase().contains("chokado")
+				|| webPageSource.toLowerCase().contains("chocada") 	|| webPageSource.toLowerCase().contains("chocad")
+				|| webPageSource.toLowerCase().contains("chocao") 	|| webPageSource.toLowerCase().contains("shocado")
+				|| webPageSource.toLowerCase().contains("chokdo") 	|| webPageSource.toLowerCase().contains("prenda") 
+				|| webPageSource.toLowerCase().contains("choque")	|| webPageSource.toLowerCase().contains("choke")
+				|| webPageSource.toLowerCase().contains("shoke")	|| webPageSource.toLowerCase().contains("desarme"))
 						&& (!webPageSource.toLowerCase().contains("nunca chocado")
 						&& !webPageSource.toLowerCase().contains("nunca chokado")
 						&& !webPageSource.toLowerCase().contains("nunca chocada")
