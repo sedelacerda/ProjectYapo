@@ -207,12 +207,13 @@ public class LocalScanner extends Scanner {
 								int meanPriceStat = Integer.parseInt(item[6].replaceAll("[\\s.]", ""));
 								Integer price = Integer.parseInt(linkInfo[7].replaceAll("[\\s.]", ""));
 
+								/**TODO se puso el Herramientas.toPrice, si no funciona borrar **/
 								// Actualizamos si es que es el precio minimo
 								if (price < Integer.parseInt(item[4].replaceAll("[\\s.]", "")))
-									item[4] = linkInfo[7];
+									item[4] = Herramientas.toPrice(linkInfo[7]);
 								// Actualizamos si es que es el precio maximo
 								if (Integer.parseInt(item[5].replaceAll("[\\s.]", "")) < price)
-									item[5] = linkInfo[7];
+									item[5] = Herramientas.toPrice(linkInfo[7]);
 
 								// Aumentamos la cantidad
 								Integer newQuant = quantStat + 1;
@@ -220,7 +221,7 @@ public class LocalScanner extends Scanner {
 
 								// Actualizamos el precio promedio
 								Integer newMean = ((meanPriceStat * quantStat) + price) / newQuant;
-								item[6] = newMean.toString();
+								item[6] = Herramientas.toPrice(newMean.toString());
 
 								break;
 							}
