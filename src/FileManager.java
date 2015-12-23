@@ -95,13 +95,14 @@ public class FileManager {
 		cv.setAutosize(true);
 
 		// Write a few headers
-		addCaption(sheet, 0, 0, "Marca");
-		addCaption(sheet, 1, 0, "Modelo");
-		addCaption(sheet, 2, 0, "Año");
-		addCaption(sheet, 3, 0, "Cantidad");
-		addCaption(sheet, 4, 0, "Precio Min");
-		addCaption(sheet, 5, 0, "Precio Max");
-		addCaption(sheet, 6, 0, "Precio Prom");
+		addCaption(sheet, 0, 0, "Region");
+		addCaption(sheet, 1, 0, "Marca");
+		addCaption(sheet, 2, 0, "Modelo");
+		addCaption(sheet, 3, 0, "Año");
+		addCaption(sheet, 4, 0, "Cantidad");
+		addCaption(sheet, 5, 0, "Precio Min");
+		addCaption(sheet, 6, 0, "Precio Max");
+		addCaption(sheet, 7, 0, "Precio Prom");
 
 	}
 
