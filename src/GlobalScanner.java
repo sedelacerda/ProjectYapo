@@ -22,12 +22,10 @@ public class GlobalScanner extends Scanner {
 
 	private int endTimeShowerCounter = 0;
 	private long startTime = 0;
-	/**
-	 * El parametro OUTLIERS_BOUNDS regula los limites para clasificar un dato
-	 * como anomalo, se debe mantener con un valor superior a 1 para un correcto
-	 * funcionamiento.
-	 */
-	private final double OUTLIERS_BOUNDS = 1.5;
+	private int carsFoundQuantity = 0;
+	private int carsDeletedQuantity = 0;
+	
+	private int progressCounter = 0;
 
 	private ArrayList<ArrayList<String>> BMIndexs = new ArrayList<ArrayList<String>>();
 	/**
@@ -36,6 +34,10 @@ public class GlobalScanner extends Scanner {
 	 * ------------------------------- | 0 | 1 | 2 | 3 | | | | | | | | | | | | |
 	 * | | | -------------------------------
 	 */
+
+	public GlobalScanner(MainWindow mainWindow) {
+		super(mainWindow);
+	}
 
 	/**
 	 * scanYapo revisa revisa todas las marcas de autos y todos los modelos de
@@ -49,103 +51,119 @@ public class GlobalScanner extends Scanner {
 		TimerTask timerTask = new TimerTask() {
 			@Override
 			public void run() {
-				if (runScan) {
-					endTimeShowerCounter = 0;
-					startTime = System.currentTimeMillis();
-					try {
-						fillBrandsAndModelsIndexs();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
-
-					if (runScan) {
-						for (int t = 0; t < Herramientas.CANT_SCAN_THREADS; t++) {
-
-							final int k = t;
-							new Thread() {
-								@Override
-								public void run() {
-									if (runScan) {
-										final int[] partition = Herramientas.getBMIndexsPartitions().get(k);
-										try {
-											scanSomeYapoCars(partition[0], partition[1]);
-											System.out.println(endThreadCounter);
-											showEndTime();
-											
-											if (Herramientas.CANT_SCAN_THREADS <= endThreadCounter) {
-												
-												/* Guardamos la informacion de la busqueda */
-												saveLastScanDataToFile();
-												
-												/* Avisamos que se termino el scan diario */
-												MainWindow.insertNewProgramCurrentState(
-														"El scan diario ha terminado! Pronto comenzará un nuevo scan para encontrar nuevas publicaciones.",
-														Color.BLACK);
-
-												/* Guardamos las estadisticas del dia a un excel */
-												String[][] outStatistics = new String[statistics.size()][];
-												for (int i = 0; i < statistics.size(); i++) {
-													outStatistics[i] = statistics.get(i);
-												}
-
-												// Ordenamos el array segun el nombre de la marca
-												Arrays.sort(outStatistics, new Comparator<String[]>() {
-													@Override
-													public int compare(final String[] entry1, final String[] entry2) {
-														final String brand1 = entry1[0];
-														final String brand2 = entry2[0];
-														return brand1.compareTo(brand2);
-													}
-												});
-
-												try {
-													if (!runScan) {
-														return;
-													}
-													/* Guardamos el archivo */
-													FileManager.writeStatistics("Estadisticas.xls", outStatistics);
-													/* Enviamos el archivo por mail */
-													Email.sendFileEmail("Daily Yapo statistics",
-															"En el archivo adjunto se podra observar las estadisticas de los autos entre los años "
-																	+ MainWindow.globalScan.ANO_MIN + " y el " + MainWindow.globalScan.ANO_MAX,
-															new String[] { "Estadisticas.xls" }, Usuarios.getAllEmails());
-													/* Comenzamos el local scanner */
-													MainWindow.runLocalScanner();
-												} catch (WriteException e) {
-													e.printStackTrace();
-												}
-											}
-										} catch (IOException e) {
-											e.printStackTrace();
-										}
-									}
-								}
-							}.start();
-						}
-					}
-				}
+				Herramientas.restartApplication(GlobalScanner.this);
 			}
 		};
 
 		Timer ti = new Timer();
 		/* 86.400.000 milisegundos = 1 dia */
-		ti.scheduleAtFixedRate(timerTask, 0, 86400000);
+		//ti.schedule(timerTask, 86400000);
+		ti.schedule(timerTask, 3600000);
+		
+		if (runScan) {
+			endTimeShowerCounter = 0;
+			startTime = System.currentTimeMillis();
+			try {
+				fillBrandsAndModelsIndexs();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
+			if (runScan) {
+				for (int t = 0; t < Constants.CANT_SCAN_THREADS; t++) {
+
+					final int k = t;
+					new Thread() {
+						@Override
+						public void run() {
+							if (runScan) {
+								final int[] partition = Herramientas.getBMIndexsPartitions().get(k);
+								try {
+									scanSomeYapoCars(partition[0], partition[1]);
+									System.out.println(endThreadCounter);
+									showEndTime();
+									
+									if (Constants.CANT_SCAN_THREADS <= endThreadCounter) {
+										
+										context.setProgress(100);
+										/* Guardamos la informacion de la busqueda */
+										saveLastScanDataToFile();
+										
+										/* Avisamos que se termino el scan diario */
+										context.insertNewProgramCurrentState(
+												"El scan diario ha terminado! Pronto comenzará un nuevo scan para encontrar nuevas publicaciones.",
+												Color.BLUE, true);
+
+										/* Guardamos las estadisticas del dia a un excel */
+										String[][] outStatistics = new String[statistics.size()][];
+										for (int i = 0; i < statistics.size(); i++) {
+											outStatistics[i] = statistics.get(i);
+										}
+
+										// Ordenamos el array segun el nombre de la marca
+										try{
+										Arrays.sort(outStatistics, new Comparator<String[]>() {
+											public int compare(final String[] entry1, final String[] entry2) {
+												final String brand1 = entry1[0];
+												final String brand2 = entry2[0];
+												return brand1.compareTo(brand2);
+											}
+										});
+										} catch(NullPointerException e){
+											e.printStackTrace();
+										}
+
+										try {
+											if (!runScan) {
+												return;
+											}
+											/* Guardamos el archivo */
+											FileManager.writeStatistics("Estadisticas.xls", outStatistics);
+											/* Enviamos el archivo por mail */
+											emailSender.sendFileEmail("(Testing)Daily Yapo statistics",
+													"En el archivo adjunto se podra observar las estadisticas de los autos entre los años "
+															+ context.anoMin + " y el " + context.anoMax,
+													new String[] { "Estadisticas.xls" }, Usuarios.getAllEmails());
+											/*
+											Email.sendFileEmail("Daily Yapo statistics",
+													"En el archivo adjunto se podra observar las estadisticas de los autos entre los años "
+															+ context.globalScan.ANO_MIN + " y el " + context.globalScan.ANO_MAX,
+													new String[] { "Estadisticas.xls" }, Usuarios.getAllEmails());
+											 */
+											/* Comenzamos el local scanner */
+											
+											context.runLocalScanner();
+										} catch (WriteException e) {
+											e.printStackTrace();
+										}
+									}
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							}
+						}
+					}.start();
+				}
+			}
+		}
 	}
 
-	/** showEndTime se encarga de mostrar un mensaje en pantalla que informa que un thread termino
+	/**showEndTime se encarga de mostrar un mensaje en pantalla que informa que un thread termino
 	 * y ademas muestra cuanto se demoro.
 	 */
 	private void showEndTime() {
 		endTimeShowerCounter++;
 		long endTime = System.currentTimeMillis();
-		MainWindow.insertNewProgramCurrentState("Scanner " + endTimeShowerCounter + "/" + Herramientas.CANT_SCAN_THREADS
-				+ " termino con tiempo: " + (endTime - startTime) / 1000 + " segundos.", Color.BLACK);
-
-		if (Herramientas.CANT_SCAN_THREADS <= endTimeShowerCounter) {
-			MainWindow.insertNewProgramCurrentState(
+		context.insertNewProgramCurrentState("Scanner " + endTimeShowerCounter + "/" + Constants.CANT_SCAN_THREADS
+				+ " termino con tiempo: " + (endTime - startTime) / 1000 + " segundos.", Color.BLACK, false);
+		if (Constants.CANT_SCAN_THREADS <= endTimeShowerCounter) {
+			context.insertNewProgramCurrentState(
 					"Tiempo total: " + (endTime - startTime) / 1000 + " segundos.\nEquivale a "
 							+ (endTime - startTime) / 60000 + " minutos.\nCantidad de errores: " + errorCounter,
-					Color.BLUE);
+					Color.BLUE, false);
+			context.insertNewProgramCurrentState("Numero de publicaciones: " + carsFoundQuantity 
+					+ "\nNumero de publicaciones filtradas: " + (carsFoundQuantity-carsDeletedQuantity) 
+					+ "\nNumero final de publicaciones: "+ carsDeletedQuantity, Color.BLACK, false);
 			endTimeShowerCounter = 0;
 		}
 	}
@@ -184,8 +202,8 @@ public class GlobalScanner extends Scanner {
 				Integer pSum = 0;
 
 				if (lastIndex.equals(fila.get(0)) == false)
-					MainWindow.insertNewProgramCurrentState("Buscando datos para modelos de la marca " + fila.get(0)
-							+ ": " + fila.get(1) + " del año " + year, Color.BLACK);
+					context.insertNewProgramCurrentState("Buscando datos para modelos de la marca " + fila.get(0)
+							+ ": " + fila.get(1) + " del año " + year, Color.BLACK, false);
 
 				ArrayList<Integer> precios = new ArrayList<Integer>();
 
@@ -196,7 +214,7 @@ public class GlobalScanner extends Scanner {
 						return;
 					}
 
-					String source = getUrlSource("http://www.yapo.cl/" + REGION + "/autos?ca=" + COD_REGION
+					String source = getUrlSource("http://www.yapo.cl/" + Constants.REGION + "/autos?ca=" + Constants.COD_REGION
 							+ "&l=0&w=1&st=s&br=" + fila.get(0) + "&mo=" + fila.get(2) + "&o=" + pag + "&rs=" + year
 							+ "&re=" + year + "&ps=" + INDEX_PRECIO_MIN + "&pe=" + INDEX_PRECIO_MAX);
 
@@ -206,8 +224,11 @@ public class GlobalScanner extends Scanner {
 						Integer pMean = 0;
 
 						if (cant > 0) {
-
+							
+							carsFoundQuantity += precios.size();
 							precios = removeOutliers(precios);
+							carsDeletedQuantity += precios.size();
+							
 							DescriptiveStatistics ds = new DescriptiveStatistics();
 							for (Integer p : precios) {
 								ds.addValue(p);
@@ -232,7 +253,7 @@ public class GlobalScanner extends Scanner {
 							resultStatistic[5] = Herramientas.toPrice(pMax.toString());
 							resultStatistic[6] = Herramientas.toPrice(pMean.toString());
 							statistics.add(resultStatistic);
-							MainWindow.insertStatistics(resultStatistic);
+							context.insertStatistics(resultStatistic);
 						}
 
 						break;
@@ -278,6 +299,12 @@ public class GlobalScanner extends Scanner {
 						}
 					}
 				}
+				
+				progressCounter++;
+				
+				/* Actualizamos la barra de progreso */
+				//System.out.println(progressCounter+"/"+BMIndexs.size()* (ANO_MAX - ANO_MIN + 1));
+				context.setProgress(progressCounter * 100/(BMIndexs.size() * (ANO_MAX - ANO_MIN + 1)));
 			}
 		}
 
@@ -300,7 +327,7 @@ public class GlobalScanner extends Scanner {
 	public ArrayList<Integer> removeOutliers(ArrayList<Integer> allPrices) {
 
 		ArrayList<Integer> out = new ArrayList<Integer>();
-		double h = OUTLIERS_BOUNDS * (Calculate.quartile3(allPrices) - Calculate.quartile1(allPrices));
+		double h = Constants.OUTLIERS_BOUNDS * (Calculate.quartile3(allPrices) - Calculate.quartile1(allPrices));
 		double undLim = Calculate.quartile1(allPrices) - h;
 		double supLim = Calculate.quartile3(allPrices) + h;
 		for (Integer price : allPrices) {
@@ -340,9 +367,9 @@ public class GlobalScanner extends Scanner {
 	@SuppressWarnings("serial")
 	public void fillBrandsAndModelsIndexs() throws IOException {
 
-		MainWindow.insertNewProgramCurrentState("Extrayendo listado de marcas...", Color.BLACK);
-		String source = getUrlSource("http://www.yapo.cl/" + REGION + "/autos?ca=" + COD_REGION + "&l=0&w=1&st=s");
-		source = source.substring(source.indexOf("Marca"), source.length());
+		context.insertNewProgramCurrentState("Extrayendo listado de marcas...", Color.BLACK, true);
+		String source = getUrlSource("http://www.yapo.cl/" + Constants.REGION + "/autos?ca=" + Constants.COD_REGION + "&l=0&w=1&st=s");
+		source = source.substring(source.indexOf("Marca<"), source.length());
 
 		if (source.indexOf("</option>") < source.indexOf("<option"))
 			source = source.substring(source.indexOf("</option>"), source.indexOf("</select>"));
@@ -357,8 +384,8 @@ public class GlobalScanner extends Scanner {
 			source = source.substring(source.indexOf(">") + 1, source.length());
 			String brand = source.substring(0, source.indexOf("</option>"));
 			n++;
-			MainWindow.insertNewProgramCurrentState("Buscando listado de modelos para marca " + n + ": " + brand,
-					Color.BLACK);
+			context.insertNewProgramCurrentState("Buscando listado de modelos para marca " + n + ": " + brand,
+					Color.BLACK, false);
 			ArrayList<String[]> models = getModelsIndexs(Integer.parseInt(index));
 			final String index2 = index;
 			final String brand2 = brand;
@@ -384,8 +411,9 @@ public class GlobalScanner extends Scanner {
 		 * System.out.print("\n"); } System.out.println("MarcasXModelos = "+i);
 		 */
 		if (runScan) {
-			MainWindow.insertNewProgramCurrentState("Filtrando marcas...", Color.BLACK);
+			context.insertNewProgramCurrentState("Filtrando marcas...", Color.BLACK, true);
 			BMIndexs = Herramientas.filterBrands(BMIndexs);
+			context.insertNewProgramCurrentState("Iniciando el scan...", Color.BLACK, true);
 		}
 
 	}
@@ -402,7 +430,7 @@ public class GlobalScanner extends Scanner {
 
 		ArrayList<String[]> out = new ArrayList<String[]>();
 		String source = getUrlSource(
-				"http://www.yapo.cl/" + REGION + "/autos?ca=" + COD_REGION + "&l=0&w=1&st=s&br=" + _brandIndex);
+				"http://www.yapo.cl/" + Constants.REGION + "/autos?ca=" + Constants.COD_REGION + "&l=0&w=1&st=s&br=" + _brandIndex);
 		if (!source.equals("")) {
 			source = source.substring(source.indexOf(">Modelo<"), source.length());
 

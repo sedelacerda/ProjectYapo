@@ -1,4 +1,6 @@
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.text.NumberFormat;
@@ -6,15 +8,13 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 public class Herramientas {
-
-	public static int CANT_SCAN_THREADS = 8; // Cantidad de threads que se usan
-												// para hacer el scan de todos
-												// los autos de yapo (Main Scan)
+	
 	public static String[] marcas; // Este arreglo ayuda a convertir de index
 									// imaginario a real (por ej: para
 									// particionar BMIndexs)
 
 	public static String toPrice(String precio) {
+		precio = precio.replace(".", "");
 		Integer precioint = Integer.parseInt(precio);
 		String out = precio;
 		NumberFormat numberFormatter = NumberFormat.getNumberInstance(Locale.GERMANY);
@@ -74,10 +74,10 @@ public class Herramientas {
 	public static ArrayList<int[]> getBMIndexsPartitions() {
 		ArrayList<int[]> out = new ArrayList<int[]>();
 
-		int partLength = marcas.length / CANT_SCAN_THREADS;
+		int partLength = marcas.length / Constants.CANT_SCAN_THREADS;
 
-		for (int i = 0; i < CANT_SCAN_THREADS; i++) {
-			if (i != CANT_SCAN_THREADS - 1) {
+		for (int i = 0; i < Constants.CANT_SCAN_THREADS; i++) {
+			if (i != Constants.CANT_SCAN_THREADS - 1) {
 				out.add(new int[] { i * partLength, i * partLength + partLength });
 			} else {
 				out.add(new int[] { i * partLength, marcas.length }); // la
@@ -93,7 +93,7 @@ public class Herramientas {
 		return out;
 	}
 	
-	public static void restartApplication()
+	public static void restartApplication(Scanner scanner)
 	{
 	  final String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
 	  File currentJar;
@@ -101,17 +101,18 @@ public class Herramientas {
 	  try {		
 		  currentJar = new File(MainWindow.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 		  /* is it a jar file? */
-		  if(!currentJar.getName().endsWith(".jar")){
-			  System.out.println(currentJar.getName());
+		  if(!currentJar.getName().endsWith(".jar"))
 			  return;
-		  }
-
+		  
+		  
 		  /* Build command: java -jar application.jar */
 		  final ArrayList<String> command = new ArrayList<String>();
 		  command.add(javaBin);
 		  command.add("-jar");
 		  command.add(currentJar.getPath());
-
+		  
+		  scanner.saveLastScanDataToFile(true);
+		  
 		  final ProcessBuilder builder = new ProcessBuilder(command);
 		  builder.start();
 		  System.exit(0);
@@ -124,4 +125,253 @@ public class Herramientas {
 			  e.printStackTrace();
 		}
 	}
+	
+	/** getLastTimeScanHour revisa el archivo lastTimeScanData y retorna un string
+	 * de forma HH/MM que representa la hora de la ultima vez que se realizo un scan
+	 * @return
+	 */
+	public static String getLastTimeScanTime(){
+		String fileHour = "00";
+		String fileMin = "00";
+		String fileSec = "00";
+		File file = new File("lastTimeData.txt");
+		
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
+			boolean foundHour = false;
+			String line;
+			while ((line = br.readLine()) != null) {
+
+				if (line.contains("<HORA>")) {
+					fileHour = line.substring(line.indexOf("<HORA>") + 6, line.indexOf(":"));
+					if (fileHour.length() < 2)
+						fileHour = "0" + fileHour;
+					line = line.substring(line.indexOf(":") + 1, line.length());
+					fileMin = line.substring(0, line.indexOf(":"));
+					if (fileMin.length() < 2)
+						fileMin = "0" + fileMin;
+					foundHour = true;
+				}
+
+				if (foundHour)
+					break;
+			}
+
+		} catch (IOException e) {
+			System.out.print("No se pudo encontrar la hora en el archivo lastTimeData.txt");
+		}
+		
+		return fileHour+":"+fileMin+":"+fileSec;
+	}
+	
+	/** getLastTimeScanDate revisa el archivo lastTimeScanData y retorna un string
+	 * de forma DD/MM/YYYY que representa la fecha de la ultima vez que se realizo un scan
+	 * @return
+	 */
+	public static String getLastTimeScanDate(){
+		
+		String fileDay = "01";
+		String fileMonth = "01";
+		String fileYear = "2015";
+		
+		File file = new File("lastTimeData.txt");
+		
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
+			boolean foundDate = false;
+			String line;
+			while ((line = br.readLine()) != null) {
+
+				if (line.contains("<FECHA>")) {
+					fileDay = line.substring(line.indexOf("<FECHA>") + 7, line.indexOf("-"));
+					line = line.substring(line.indexOf("-") + 1, line.length());
+					fileMonth = line.substring(0, line.indexOf("-"));
+					line = line.substring(line.indexOf("-") + 1, line.length());
+					fileYear = line.substring(0, line.indexOf("</FECHA>"));
+					foundDate = true;
+				}
+
+				if (foundDate)
+					break;
+			}
+
+		} catch (IOException e) {
+			System.out.print("No se pudo encontrar la fecha en el archivo lastTimeData.txt");
+		}
+		
+		return fileDay + "/" + fileMonth + "/" + fileYear;
+	}
+	
+	/** getLastTimeScanMinYear revisa el archivo lastTimeScanData y retorna un string
+	 * que representa el año minimo de la ultima vez que se realizo un scan
+	 * @return
+	 */
+	public static String getLastTimeScanMinYear(){
+		
+		String fileMinYear = "2014";
+		
+		File file = new File("lastTimeData.txt");
+		
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
+			boolean foundMinYear = false;
+			String line;
+			while ((line = br.readLine()) != null) {
+
+				if (line.contains("<ANO MIN>")) {
+					fileMinYear = line.substring(line.indexOf("<ANO MIN>") + 9, line.indexOf("</ANO MIN>"));
+					foundMinYear = true;
+				}
+
+				if (foundMinYear)
+					break;
+			}
+
+		} catch (IOException e) {
+			System.out.print("No se pudo encontrar el año mínimo en el archivo lastTimeData.txt");
+		}
+		
+		return fileMinYear;
+	}
+	
+	/** getLastTimeScanMaxYear revisa el archivo lastTimeScanData y retorna un string
+	 * que representa el año maximo de la ultima vez que se realizo un scan
+	 * @return
+	 */
+	public static String getLastTimeScanMaxYear(){
+		
+		String fileMaxYear = "2015";
+		
+		File file = new File("lastTimeData.txt");
+		
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
+			boolean foundMaxYear = false;
+			String line;
+			while ((line = br.readLine()) != null) {
+
+				if (line.contains("<ANO MAX>")) {
+					fileMaxYear = line.substring(line.indexOf("<ANO MAX>") + 9, line.indexOf("</ANO MAX>"));
+					foundMaxYear = true;
+				}
+
+				if (foundMaxYear)
+					break;
+			}
+
+		} catch (IOException e) {
+			System.out.print("No se pudo encontrar el año máximo en el archivo lastTimeData.txt");
+		}
+		
+		return fileMaxYear;
+	}
+	
+	/** getLastTimeScanMinPriceIndex revisa el archivo lastTimeScanData y retorna un string
+	 * que representa el indice del precio minimo de la ultima vez que se realizo un scan
+	 * @return
+	 */
+	public static String getLastTimeScanMinPriceIndex(){
+		
+		String fileMinPriceIndex = "0";
+		
+		File file = new File("lastTimeData.txt");
+		
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
+			boolean foundMinPriceIndex = false;
+			String line;
+			while ((line = br.readLine()) != null) {
+
+				if (line.contains("<INDEX PRECIO MIN>")) {
+					fileMinPriceIndex = line.substring(line.indexOf("<INDEX PRECIO MIN>") + 18, line.indexOf("</INDEX PRECIO MIN>"));
+					foundMinPriceIndex = true;
+				}
+
+				if (foundMinPriceIndex)
+					break;
+			}
+
+		} catch (IOException e) {
+			System.out.print("No se pudo encontrar el indice del precio minimo en el archivo lastTimeData.txt");
+		}
+		
+		return fileMinPriceIndex;
+	}
+	
+	/** getLastTimeScanMaxPriceIndex revisa el archivo lastTimeScanData y retorna un string
+	 * que representa el indice del precio maximo de la ultima vez que se realizo un scan
+	 * @return
+	 */
+	public static String getLastTimeScanMaxPriceIndex(){
+		
+		String fileMaxPriceIndex = "20";
+		File file = new File("lastTimeData.txt");
+		
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
+			boolean foundMaxPriceIndex = false;
+			String line;
+			while ((line = br.readLine()) != null) {
+
+				if (line.contains("<INDEX PRECIO MAX>")) {
+					fileMaxPriceIndex = line.substring(line.indexOf("<INDEX PRECIO MAX>") + 18, line.indexOf("</INDEX PRECIO MAX>"));
+					foundMaxPriceIndex = true;
+				}
+
+				if (foundMaxPriceIndex)
+					break;
+			}
+
+		} catch (IOException e) {
+			System.out.print("No se pudo encontrar el indice de precio maximo en el archivo lastTimeData.txt");
+		}
+		
+		return fileMaxPriceIndex;
+	}
+	
+	/** getLastTimeScanShouldRestart revisa el archivo lastTimeScanData y retorna un boolean
+	 * que si es true significa que debe iniciarse automaticamente el scan, si es false
+	 * significa que es primer scan desde que se abrio el programa haciendo doble click y
+	 * que se le debe esperar al usuario [ara que inicie el scan.
+	 * @return
+	 */
+	public static boolean getLastTimeScanShouldRestart(){
+		
+		String fileShouldRestart = "false";
+		File file = new File("lastTimeData.txt");
+		
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
+			boolean foundShouldRestart = false;
+			String line;
+			while ((line = br.readLine()) != null) {
+
+				if (line.contains("<REINICIAR>")) {
+					fileShouldRestart = line.substring(line.indexOf("<REINICIAR>") + 11, line.indexOf("</REINICIAR>"));
+					foundShouldRestart = true;
+				}
+
+				if (foundShouldRestart)
+					break;
+			}
+
+		} catch (IOException e) {
+			System.out.print("No se pudo encontrar el indice de precio maximo en el archivo lastTimeData.txt");
+		}
+		
+		if(fileShouldRestart.toLowerCase().equals("true"))
+			return true;
+		
+		else
+			return false;
+	}
+
+	
 }

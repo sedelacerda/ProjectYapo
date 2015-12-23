@@ -12,21 +12,13 @@ import java.util.TimerTask;
 
 public class LocalScanner extends Scanner {
 
-	// TODO se cambio para testing
-	// private final int TIEMPO_REPOSO = 30*60; //Cada 1800 segundos (30
-	// minutos) se volvera a buscar nuevos autos
-	private final int TIEMPO_REPOSO = 30 * 60;
-
 	private TimerTask timerTask;
 	private TimerTask timerTask2;
 	private Timer timer;
 	private int minTransc = 0;
 
-	// recomendPercent es el porcentaje minimo de diferencia de precio que se
-	// usara para clasificar un auto como recomendado. 0<=recomendPercent<=1
-	private final double PORCENT_RECOMEND = 0.2;
-
-	public LocalScanner(ArrayList<String[]> globalData, ArrayList<String[]> globalStatistics, int anoMin, int anoMax) {
+	public LocalScanner(ArrayList<String[]> globalData, ArrayList<String[]> globalStatistics, int anoMin, int anoMax, MainWindow mainWindow) {
+		super(mainWindow);
 		this.data = globalData;
 		this.statistics = globalStatistics;
 		this.ANO_MIN = anoMin;
@@ -43,13 +35,13 @@ public class LocalScanner extends Scanner {
 		timerTask = new TimerTask() {
 			@Override
 			public void run() {
-				java.util.TimeZone tz = java.util.TimeZone.getTimeZone(ZONA_HORARIA);
+				java.util.TimeZone tz = java.util.TimeZone.getTimeZone(Constants.ZONA_HORARIA);
 				Calendar c = java.util.Calendar.getInstance(tz);
 				int mes = c.get(Calendar.MONTH) + 1;
 
-				MainWindow.insertNewProgramCurrentState(c.get(Calendar.DAY_OF_MONTH) + "/" + mes + "/"
+				context.insertNewProgramCurrentState(c.get(Calendar.DAY_OF_MONTH) + "/" + mes + "/"
 						+ c.get(Calendar.YEAR) + " " + c.get(Calendar.HOUR_OF_DAY) + ":" + c.get(Calendar.MINUTE)
-						+ "! Hora de ver si ha aparecido algo nuevo!", Color.BLACK);
+						+ "! Hora de ver si ha aparecido algo nuevo!", Color.BLACK, false);
 
 				try {
 					searchForNewPublications();
@@ -63,11 +55,12 @@ public class LocalScanner extends Scanner {
 			@Override
 			public void run() {
 				if (runScan) {
-					MainWindow.insertNewProgramCurrentState(
-							"Faltan " + (TIEMPO_REPOSO / 60 - minTransc) + " minutos para un nuevo scan.", Color.BLACK);
+					
+					context.setBottomStatusText(
+							"Faltan " + (Constants.TIEMPO_REPOSO / 60 - minTransc) + " minutos para un nuevo scan");
 					minTransc++;
 					// TODO checkear esto
-					if (TIEMPO_REPOSO / 60 - minTransc <= 0)
+					if (Constants.TIEMPO_REPOSO / 60 - minTransc <= 0)
 						minTransc = 0;
 				}
 			}
@@ -80,7 +73,7 @@ public class LocalScanner extends Scanner {
 		// 'TIEMPO_REPOSO'*1000 milisegundos
 		// Dentro de 'TIEMPO_REPOSO'*1000 milisegundos avísame cada
 		// 'TIEMPO_REPOSO'*1000 milisegundos
-		timer.schedule(timerTask, TIEMPO_REPOSO * 1000, TIEMPO_REPOSO * 1000);
+		timer.schedule(timerTask, Constants.TIEMPO_REPOSO * 1000, Constants.TIEMPO_REPOSO * 1000);
 
 		// Dentro de 0 milisegundos avisame cada 60.000 milisegundos (1 minuto)
 		timer.schedule(timerTask2, 0, 60000);
@@ -103,7 +96,7 @@ public class LocalScanner extends Scanner {
 		if (!runScan) {
 			return;
 		}
-		MainWindow.insertNewProgramCurrentState("Buscando links de nuevas publicaciones...", Color.BLACK);
+		context.insertNewProgramCurrentState("Buscando links de nuevas publicaciones...", Color.BLACK, false);
 		/*
 		 * Primero obtendremos los links de todos los autos publicados
 		 * recientemente
@@ -116,10 +109,10 @@ public class LocalScanner extends Scanner {
 			}
 			// TODO se cambio esto para testing
 			String source = getUrlSource(
-					"http://www.yapo.cl/" + REGION + "/autos?ca=" + COD_REGION + "&l=0&w=1&st=s&rs=" + ANO_MIN + "&re="
+					"http://www.yapo.cl/" + Constants.REGION + "/autos?ca=" + Constants.COD_REGION + "&l=0&w=1&st=s&rs=" + ANO_MIN + "&re="
 							+ ANO_MAX + "&ps=" + INDEX_PRECIO_MIN + "&pe=" + INDEX_PRECIO_MAX + "&o=" + pag);
 							// String source =
-							// getUrlSource("http://www.yapo.cl/"+REGION+"/autos?ca="+COD_REGION+"&l=0&w=1&st=s&rs="+ANO_MIN+"&re="+ANO_MAX+"&ps="+9+"&pe="+INDEX_PRECIO_MAX+"&o="+pag);
+							// getUrlSource("http://www.yapo.cl/"+Constants.REGION+"/autos?ca="+Constants.COD_REGION+"&l=0&w=1&st=s&rs="+ANO_MIN+"&re="+ANO_MAX+"&ps="+9+"&pe="+INDEX_PRECIO_MAX+"&o="+pag);
 
 			// Pagina esta vacia...
 			if (source.contains("Resultado no encontrado") || source.contains("span class=\"price\"") == false) {
@@ -144,7 +137,7 @@ public class LocalScanner extends Scanner {
 							source = source.substring(source.indexOf("<a href=\"") + 9, source.length());
 							links.add(source.substring(0, source.indexOf("\"")));
 
-							// MainWindow.insertRecomended(getDataFromPost(source.substring(0,
+							// context.insertRecomended(getDataFromPost(source.substring(0,
 							// source.indexOf("\""))));
 						} else
 							break Mainloop;
@@ -155,11 +148,11 @@ public class LocalScanner extends Scanner {
 			}
 		}
 
-		MainWindow.insertNewProgramCurrentState("Terminó la revisión de links", Color.BLACK);
+		context.insertNewProgramCurrentState("Terminó la revisión de links", Color.BLACK, false);
 
 		saveLastScanDataToFile();
 
-		MainWindow.insertNewProgramCurrentState("Buscando publicaciones recomendadas...", Color.BLACK);
+		context.insertNewProgramCurrentState("Buscando publicaciones recomendadas...", Color.BLACK, false);
 
 		ArrayList<String[]> recomended = new ArrayList<String[]>();
 
@@ -186,7 +179,7 @@ public class LocalScanner extends Scanner {
 							if (item[2].equals(linkInfo[4])) {
 								// Estadisticas correspondiente encontradas!
 
-								Integer priceUndLimit = (int) ((1 - PORCENT_RECOMEND)* Integer.parseInt(item[6].replaceAll("[\\s.]", "")));
+								Integer priceUndLimit = (int) ((1 - Constants.PORCENT_RECOMEND)* Integer.parseInt(item[6].replaceAll("[\\s.]", "")));
 								// Revisamos si es un recomendado
 								if (Integer.parseInt(linkInfo[7].replaceAll("[\\s.]", "")) <= priceUndLimit) {
 									String[] allInfo = new String[linkInfo.length + 4];
@@ -199,7 +192,7 @@ public class LocalScanner extends Scanner {
 									allInfo[linkInfo.length+3] = item[6];
 									
 									recomended.add(allInfo);
-									MainWindow.insertRecomended(linkInfo);
+									context.insertRecomended(linkInfo);
 								}
 
 								// Ahora lo metemos a las estadisticas
@@ -238,7 +231,7 @@ public class LocalScanner extends Scanner {
 				return;
 			}
 			String content = "A continuacion se listan los autos recomendados encontrados en los ultimos "
-					+ TIEMPO_REPOSO / 60 + " minutos:\n\n";
+					+ Constants.TIEMPO_REPOSO / 60 + " minutos:\n\n";
 			int count = 1;
 
 			for (String[] car : recomended) {
@@ -256,11 +249,11 @@ public class LocalScanner extends Scanner {
 				content = content + "\tRef: Precio Prom = "+car[car.length-1]+"\n\n";
 				count++;
 			}
-			Email.sendSimpleEmail("Recomended Yapo cars", content, Usuarios.getAllEmails());
+			emailSender.sendSimpleEmail("(Testing)Recomended Yapo cars", content, Usuarios.getAllEmails());
 		}
 
 		else {
-			MainWindow.insertNewProgramCurrentState("No se ha encontrado ninguna publicacion recomendada", Color.BLACK);
+			context.insertNewProgramCurrentState("No se ha encontrado ninguna publicacion recomendada", Color.BLACK, false);
 		}
 	}
 
@@ -286,7 +279,7 @@ public class LocalScanner extends Scanner {
 			month = date.substring(date.indexOf(" ") + 1, date.length());
 		}
 
-		String fullDate = day + "/" + month + "/" + ANO_ACTUAL + " " + hour + ":" + min + ":00";
+		String fullDate = day + "/" + month + "/" + Constants.ANO_ACTUAL + " " + hour + ":" + min + ":00";
 
 		String fileHour = "00";
 		String fileMin = "00";
@@ -331,7 +324,7 @@ public class LocalScanner extends Scanner {
 			e.printStackTrace();
 		}
 
-		String fileDate = fileDay + "/" + fileMonth + "/" + ANO_ACTUAL + " " + fileHour + ":" + fileMin + ":00";
+		String fileDate = Herramientas.getLastTimeScanDate() + " " + Herramientas.getLastTimeScanTime();
 
 		/* Ahora comparamos las fechas */
 		SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");

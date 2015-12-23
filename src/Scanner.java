@@ -15,17 +15,16 @@ import java.util.Calendar;
 
 public abstract class Scanner {
 
-	protected String ZONA_HORARIA = "GMT-3";
-	protected final int ANO_ACTUAL = 2015;
+	
 	protected int ANO_MIN = 2012; // cuidar que ANO_MIN sea mayor que 1960
 	protected int ANO_MAX = 2012;
 	protected int INDEX_PRECIO_MAX = 24;
 	protected int INDEX_PRECIO_MIN = 0;
-	protected String REGION = "region_metropolitana";
-	protected final String COD_REGION = "15_s"; // region metropolitana
-	protected static int errorCounter = 0;
+	protected int errorCounter = 0;
 	protected Integer endThreadCounter = 0;
 	protected volatile boolean runScan = true;
+	protected MainWindow context;
+	protected Email emailSender;
 
 	protected ArrayList<String[]> data = new ArrayList<String[]>();
 	/**
@@ -49,9 +48,18 @@ public abstract class Scanner {
 	 * ---
 	 */
 
-	public void saveLastScanDataToFile() {
+	public Scanner(MainWindow _context){
+		this.context = _context;
+		emailSender = new Email(_context);
+	}
+	
+	public void saveLastScanDataToFile(){
+		saveLastScanDataToFile(false);
+	}
+	
+	public void saveLastScanDataToFile(boolean shouldStartOver) {
 		Writer writer;
-		java.util.TimeZone tz = java.util.TimeZone.getTimeZone(ZONA_HORARIA);
+		java.util.TimeZone tz = java.util.TimeZone.getTimeZone(Constants.ZONA_HORARIA);
 		java.util.Calendar c = java.util.Calendar.getInstance(tz);
 
 		System.out.println(c.get(java.util.Calendar.HOUR_OF_DAY) + ":" + c.get(java.util.Calendar.MINUTE) + ":"
@@ -63,8 +71,7 @@ public abstract class Scanner {
 			writer.write("<HORA>" + c.get(Calendar.HOUR_OF_DAY) + ":" + c.get(Calendar.MINUTE) + ":"
 					+ c.get(Calendar.SECOND) + "</HORA>");
 			writer.write(System.getProperty("line.separator"));
-			writer.write(
-					"<FECHA>" + c.get(Calendar.DAY_OF_MONTH) + "-" + mes + "-" + c.get(Calendar.YEAR) + "</FECHA>");
+			writer.write("<FECHA>" + c.get(Calendar.DAY_OF_MONTH) + "-" + mes + "-" + c.get(Calendar.YEAR) + "</FECHA>");
 			writer.write(System.getProperty("line.separator"));
 			writer.write("<ANO MIN>" + ANO_MIN + "</ANO MIN>");
 			writer.write(System.getProperty("line.separator"));
@@ -73,6 +80,8 @@ public abstract class Scanner {
 			writer.write("<INDEX PRECIO MIN>" + INDEX_PRECIO_MIN + "</INDEX PRECIO MIN>");
 			writer.write(System.getProperty("line.separator"));
 			writer.write("<INDEX PRECIO MAX>" + INDEX_PRECIO_MAX + "</INDEX PRECIO MAX>");
+			writer.write(System.getProperty("line.separator"));
+			writer.write("<REINICIAR>" + shouldStartOver + "</REINICIAR>");
 			writer.close();
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
@@ -91,7 +100,7 @@ public abstract class Scanner {
 	 * @return
 	 * @throws IOException
 	 */
-	public static String getUrlSource(String _url) throws IOException {
+	public String getUrlSource(String _url) throws IOException {
 
 		int maxTry = 3;
 		while (true) {
@@ -105,21 +114,23 @@ public abstract class Scanner {
 				while ((inputLine = in.readLine()) != null)
 					a.append(inputLine);
 				in.close();
-
+				context.setConnectionStatus(true);
 				return a.toString();
 			}
 
 			catch (IOException e) {
+				
+				context.setConnectionStatus(false);
+				
 				maxTry--;
 				if (maxTry <= 0) {
 					if(!_url.equalsIgnoreCase("http://beatfan.site90.net/")){
-						MainWindow.insertNewProgramCurrentState(
-								"No se pudo extraer el codigo de fuente de la siguiente URL:" + _url, Color.RED);
+						context.insertNewProgramCurrentState(
+								"No se pudo extraer el codigo de fuente de la siguiente URL:" + _url, Color.RED, false);
 						errorCounter++;
 					}
 					return "";
 				} else {
-					System.out.println("Buscando conexion...");
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e1) {
