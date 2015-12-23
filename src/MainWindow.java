@@ -10,6 +10,7 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -41,11 +42,9 @@ import de.javasoft.plaf.synthetica.SyntheticaPlainLookAndFeel;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import java.util.Comparator;
-
 import java.awt.CardLayout;
 
 public class MainWindow {
-	
 	
 	private JFrame frame;
 	public String indexPrecioMin = ""+9;
@@ -84,6 +83,9 @@ public class MainWindow {
 			//UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
 			
 			UIManager.setLookAndFeel(new SyntheticaPlainLookAndFeel());
+			
+			
+			
 	    } 
 	    catch (Exception e) 
 	    {
@@ -121,6 +123,11 @@ public class MainWindow {
 		
 		frame.getContentPane().setLayout(new BorderLayout());
 		
+		indexPrecioMax = Herramientas.getLastTimeScanMaxPriceIndex();
+		indexPrecioMin = Herramientas.getLastTimeScanMinPriceIndex();
+		anoMax = Herramientas.getLastTimeScanMaxYear();
+		anoMin = Herramientas.getLastTimeScanMinYear();
+		
 		JTabbedPane tabbedPane = new JTabbedPane(SwingConstants.TOP);
 		frame.getContentPane().add(tabbedPane, BorderLayout.CENTER);
 		
@@ -149,8 +156,8 @@ public class MainWindow {
 		tableStatistics = new JTable();
 		tableStatistics.setAutoCreateRowSorter(true);
 		tableStatistics.setModel(new DefaultTableModel(new Object[][] {},
-				new String[] { "Marca", "Modelo", "A\u00F1o", "Cantidad", "Precio Min", "Precio Max", "Precio Prom" }) {
-			boolean[] columnEditables = new boolean[] { false, false, false, false, false, false, false };
+				new String[] { "Region", "Marca", "Modelo", "A\u00F1o", "Cantidad", "Precio Min", "Precio Max", "Precio Prom" }) {
+			boolean[] columnEditables = new boolean[] { false, false, false, false, false, false, false, false };
 
 			@Override
 			public boolean isCellEditable(int row, int column) {
@@ -160,7 +167,7 @@ public class MainWindow {
 		
 		TableRowSorter<DefaultTableModel> rowSorter = (TableRowSorter<DefaultTableModel>)tableStatistics.getRowSorter();
 		
-		for(int i=2; i<7; i++){
+		for(int i=3; i<8; i++){
 			rowSorter.setComparator(i, new Comparator<String>() {
 				@Override
 				public int compare(String o1, String o2)
@@ -235,6 +242,7 @@ public class MainWindow {
 							isRunning = true;
 							runGlobalScanner();
 							((JButton)arg0.getSource()).setText("Detener");
+							popUpConfig.disable();
 						} catch(ParseException e){}
 					}
 				}
@@ -246,6 +254,7 @@ public class MainWindow {
 					globalScan = new GlobalScanner(MainWindow.this);
 					isRunning = false;
 					((JButton)arg0.getSource()).setText("Iniciar");
+					popUpConfig.enable();
 				}
 			}
 		});
@@ -272,15 +281,21 @@ public class MainWindow {
 		
 		JRadioButtonMenuItem rdbtnmntmSebastin = new JRadioButtonMenuItem("Sebasti\u00E1n");
 		mnDestinatarios.add(rdbtnmntmSebastin);
+		rdbtnmntmSebastin.setSelected(true);
+		rdbtnmntmSebastin.setEnabled(false);
 		
 		JRadioButtonMenuItem rdbtnmntmGiovanni = new JRadioButtonMenuItem("Giovanni");
 		mnDestinatarios.add(rdbtnmntmGiovanni);
+		rdbtnmntmGiovanni.setSelected(true);
+		rdbtnmntmGiovanni.setEnabled(false);
 		
 		JRadioButtonMenuItem rdbtnmntmTodos = new JRadioButtonMenuItem("Todos");
 		rdbtnmntmTodos.setSelected(true);
 		mnDestinatarios.add(rdbtnmntmTodos);
+		rdbtnmntmTodos.setEnabled(false);
 		
 		JMenuItem mntmParametros = new JMenuItem("Par\u00E1metros");
+		mntmParametros.setEnabled(false);
 		mnNewMenu.add(mntmParametros);
 		
 		setConnectionStatus(false);
@@ -366,8 +381,6 @@ public class MainWindow {
 		};
 
 		scanAll.start();
-		
-		popUpConfig.disable();
 	}
 	
 	public void runLocalScanner() {

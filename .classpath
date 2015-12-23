@@ -6,7 +6,7 @@
 	<classpathentry kind="lib" path="lib/jxl.jar"/>
 	<classpathentry kind="lib" path="lib/opencsv-2.2.jar"/>
 	<classpathentry kind="lib" path="lib/forms-1.3.0.jar"/>
-	<classpathentry kind="lib" path="lib/synthetica.jar"/>
+	<classpathentry kind="lib" path="lib/synthetica.jar" sourcepath="lib/synthetica.jar"/>
 	<classpathentry kind="lib" path="lib/syntheticaPlain.jar"/>
 	<classpathentry kind="lib" path="lib/laffy-seaglass.jar"/>
 	<classpathentry kind="lib" path="lib/seaglasslookandfeel-0.1.5.jar"/>

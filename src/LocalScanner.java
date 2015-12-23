@@ -109,7 +109,7 @@ public class LocalScanner extends Scanner {
 			}
 			// TODO se cambio esto para testing
 			String source = getUrlSource(
-					"http://www.yapo.cl/" + Constants.REGION + "/autos?ca=" + Constants.COD_REGION + "&l=0&w=1&st=s&rs=" + ANO_MIN + "&re="
+					"http://www.yapo.cl/chile/autos?l=0&w=1&st=s&rs=" + ANO_MIN + "&re="
 							+ ANO_MAX + "&ps=" + INDEX_PRECIO_MIN + "&pe=" + INDEX_PRECIO_MAX + "&o=" + pag);
 							// String source =
 							// getUrlSource("http://www.yapo.cl/"+Constants.REGION+"/autos?ca="+Constants.COD_REGION+"&l=0&w=1&st=s&rs="+ANO_MIN+"&re="+ANO_MAX+"&ps="+9+"&pe="+INDEX_PRECIO_MAX+"&o="+pag);
