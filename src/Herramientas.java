@@ -159,7 +159,7 @@ public class Herramientas {
 			}
 
 		} catch (IOException e) {
-			System.out.println("No se pudo encontrar la hora en el archivo lastTimeData.txt");
+			System.out.print("No se pudo encontrar la hora en el archivo lastTimeData.txt");
 		}
 		
 		return fileHour+":"+fileMin+":"+fileSec;
@@ -198,7 +198,7 @@ public class Herramientas {
 			}
 
 		} catch (IOException e) {
-			System.out.println("No se pudo encontrar la fecha en el archivo lastTimeData.txt");
+			System.out.print("No se pudo encontrar la fecha en el archivo lastTimeData.txt");
 		}
 		
 		return fileDay + "/" + fileMonth + "/" + fileYear;
@@ -231,7 +231,7 @@ public class Herramientas {
 			}
 
 		} catch (IOException e) {
-			System.out.println("No se pudo encontrar el año mínimo en el archivo lastTimeData.txt");
+			System.out.print("No se pudo encontrar el año mínimo en el archivo lastTimeData.txt");
 		}
 		
 		return fileMinYear;
@@ -264,7 +264,7 @@ public class Herramientas {
 			}
 
 		} catch (IOException e) {
-			System.out.println("No se pudo encontrar el año máximo en el archivo lastTimeData.txt");
+			System.out.print("No se pudo encontrar el año máximo en el archivo lastTimeData.txt");
 		}
 		
 		return fileMaxYear;
@@ -276,7 +276,7 @@ public class Herramientas {
 	 */
 	public static String getLastTimeScanMinPriceIndex(){
 		
-		String fileMinPriceIndex = "9";
+		String fileMinPriceIndex = "0";
 		
 		File file = new File("lastTimeData.txt");
 		
@@ -297,7 +297,7 @@ public class Herramientas {
 			}
 
 		} catch (IOException e) {
-			System.out.println("No se pudo encontrar el indice del precio minimo en el archivo lastTimeData.txt");
+			System.out.print("No se pudo encontrar el indice del precio minimo en el archivo lastTimeData.txt");
 		}
 		
 		return fileMinPriceIndex;
@@ -309,7 +309,7 @@ public class Herramientas {
 	 */
 	public static String getLastTimeScanMaxPriceIndex(){
 		
-		String fileMaxPriceIndex = "25";
+		String fileMaxPriceIndex = "20";
 		File file = new File("lastTimeData.txt");
 		
 		BufferedReader br;
@@ -329,7 +329,7 @@ public class Herramientas {
 			}
 
 		} catch (IOException e) {
-			System.out.println("No se pudo encontrar el indice de precio maximo en el archivo lastTimeData.txt");
+			System.out.print("No se pudo encontrar el indice de precio maximo en el archivo lastTimeData.txt");
 		}
 		
 		return fileMaxPriceIndex;
@@ -363,7 +363,7 @@ public class Herramientas {
 			}
 
 		} catch (IOException e) {
-			System.out.println("No se pudo encontrar el indice de precio maximo en el archivo lastTimeData.txt");
+			System.out.print("No se pudo encontrar el indice de precio maximo en el archivo lastTimeData.txt");
 		}
 		
 		if(fileShouldRestart.toLowerCase().equals("true"))

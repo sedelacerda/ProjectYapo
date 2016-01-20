@@ -26,10 +26,6 @@ public class GlobalScanner extends Scanner {
 	private int carsDeletedQuantity = 0;
 	
 	private int progressCounter = 0;
-	
-	private ArrayList<String> selected_regions_names;
-	private ArrayList<String> selected_regions_alias;
-	private ArrayList<String> selected_regions_codes;
 
 	private ArrayList<ArrayList<String>> BMIndexs = new ArrayList<ArrayList<String>>();
 	/**
@@ -51,16 +47,6 @@ public class GlobalScanner extends Scanner {
 	 */
 	public void scanAllYapoCars() throws IOException {
 		
-		selected_regions_names = new ArrayList<String>();
-		selected_regions_alias = new ArrayList<String>();
-		selected_regions_codes = new ArrayList<String>();
-		for(int i= 0; i<context.regiones.length; i++){
-			if(context.regiones[i]){
-				selected_regions_names.add(Constants.LISTA_REGIONES_NOMBRES[i]);
-				selected_regions_alias.add(Constants.LISTA_REGIONES_ALIAS[i]);
-				selected_regions_codes.add(Constants.LISTA_REGIONES_CODIGOS[i]);
-			}
-		}
 		
 		TimerTask timerTask = new TimerTask() {
 			@Override
@@ -204,125 +190,122 @@ public class GlobalScanner extends Scanner {
 				return;
 			}
 			String lastIndex = "" + 0;
-			
-			// Para cada region
-			for(int regIndex=0; regIndex<selected_regions_alias.size(); regIndex++){
-				
-				// Para cada par marca-modelo PEDIDO
-				for (ArrayList<String> fila : BMIndexsPartition) {
+
+			// Para cada par marca-modelo PEDIDO
+			for (ArrayList<String> fila : BMIndexsPartition) {
+				if (!runScan) {
+					return;
+				}
+				Integer cant = 0;
+				Integer pMin = 999999999;
+				Integer pMax = 0;
+				Integer pSum = 0;
+
+				if (lastIndex.equals(fila.get(0)) == false)
+					context.insertNewProgramCurrentState("Buscando datos para modelos de la marca " + fila.get(0)
+							+ ": " + fila.get(1) + " del año " + year, Color.BLACK, false);
+
+				ArrayList<Integer> precios = new ArrayList<Integer>();
+
+				// Para cada pagina
+				for (int pag = 1;; pag++) {
+
 					if (!runScan) {
 						return;
 					}
-					Integer cant = 0;
-					Integer pMin = 999999999;
-					Integer pMax = 0;
-					Integer pSum = 0;
 
-					if (lastIndex.equals(fila.get(0)) == false)
-						context.insertNewProgramCurrentState("Buscando datos para " + fila.get(0)
-								+ " - "+ selected_regions_names.get(regIndex) +" - " + fila.get(1) + " - " + year, Color.BLACK, false);
+					String source = getUrlSource("http://www.yapo.cl/" + Constants.REGION + "/autos?ca=" + Constants.COD_REGION
+							+ "&l=0&w=1&st=s&br=" + fila.get(0) + "&mo=" + fila.get(2) + "&o=" + pag + "&rs=" + year
+							+ "&re=" + year + "&ps=" + INDEX_PRECIO_MIN + "&pe=" + INDEX_PRECIO_MAX);
 
-					ArrayList<Integer> precios = new ArrayList<Integer>();
+					if (source.contains("Resultado no encontrado")
+							|| source.contains("span class=\"price\"") == false) {
+						lastIndex = fila.get(0);
+						Integer pMean = 0;
 
-					// Para cada pagina
-					for (int pag = 1;; pag++) {
-						
-						if (!runScan) {
-							return;
+						if (cant > 0) {
+							
+							carsFoundQuantity += precios.size();
+							precios = removeOutliers(precios);
+							carsDeletedQuantity += precios.size();
+							
+							DescriptiveStatistics ds = new DescriptiveStatistics();
+							for (Integer p : precios) {
+								ds.addValue(p);
+							}
+							/*
+							 * System.out.println(pMin+"	"+ds.getMin());
+							 * System.out.println(pMax+"	"+ds.getMax());
+							 * pMean = pSum/cant; System.out.println(pMean+"   "
+							 * +ds.getMean());
+							 */
+							cant = precios.size();
+							pMin = (int) ds.getMin();
+							pMax = (int) ds.getMax();
+							pMean = (int) ds.getMean();
+
+							String[] resultStatistic = new String[7];
+							resultStatistic[0] = fila.get(1);
+							resultStatistic[1] = fila.get(3);
+							resultStatistic[2] = year.toString();
+							resultStatistic[3] = cant.toString();
+							resultStatistic[4] = Herramientas.toPrice(pMin.toString());
+							resultStatistic[5] = Herramientas.toPrice(pMax.toString());
+							resultStatistic[6] = Herramientas.toPrice(pMean.toString());
+							statistics.add(resultStatistic);
+							context.insertStatistics(resultStatistic);
 						}
 
-						String source = getUrlSource("http://www.yapo.cl/" + selected_regions_alias.get(regIndex) + "/autos?ca=" + selected_regions_codes.get(regIndex)
-								+ "&l=0&w=1&st=s&br=" + fila.get(0) + "&mo=" + fila.get(2) + "&o=" + pag + "&rs=" + year
-								+ "&re=" + year + "&ps=" + INDEX_PRECIO_MIN + "&pe=" + INDEX_PRECIO_MAX);
+						break;
+					}
 
-						if (source.contains("Resultado no encontrado")
-								|| source.contains("span class=\"price\"") == false) {
-							lastIndex = fila.get(0);
-							Integer pMean = 0;
+					else {
+						while (source.contains("<span class=\"price\">")) {
+							if (!runScan) {
+								return;
+							}
+							String link = "No se puede obtener el link";
+							try {
+								source = source.substring(source.indexOf("class=\"thumbs_subject\""), source.length());
+								source = source.substring(source.indexOf("<a href=\"") + 9, source.length());
+								link = source.substring(0, source.indexOf("\""));
+								source = source.substring(source.indexOf("class=\"title\">") + 14, source.length());
+								String titulo = source.substring(0, source.indexOf("</a>"));
+								source = source.substring(source.indexOf("span class=\"price\">$ ") + 21,
+										source.length());
+								String precio = source.substring(0, source.indexOf("</span>")).replaceAll("\\.", "");
+								data.add(new String[] { fila.get(1), fila.get(3), year.toString(), titulo, precio,
+										link });
 
-							if (cant > 0) {
-								
-								carsFoundQuantity += precios.size();
-								precios = removeOutliers(precios);
-								carsDeletedQuantity += precios.size();
-								
-								DescriptiveStatistics ds = new DescriptiveStatistics();
-								for (Integer p : precios) {
-									ds.addValue(p);
-								}
+								cant++;
+
 								/*
-								 * System.out.println(pMin+"	"+ds.getMin());
-								 * System.out.println(pMax+"	"+ds.getMax());
-								 * pMean = pSum/cant; System.out.println(pMean+"   "
-								 * +ds.getMean());
+								 * if(pMin>Integer.parseInt(precio)) pMin =
+								 * Integer.parseInt(precio);
+								 * if(pMax<Integer.parseInt(precio)) pMax =
+								 * Integer.parseInt(precio);
 								 */
-								cant = precios.size();
-								pMin = (int) ds.getMin();
-								pMax = (int) ds.getMax();
-								pMean = (int) ds.getMean();
 
-								String[] resultStatistic = new String[8];
-								resultStatistic[0] = selected_regions_names.get(regIndex);
-								resultStatistic[1] = fila.get(1);
-								resultStatistic[2] = fila.get(3);
-								resultStatistic[3] = year.toString();
-								resultStatistic[4] = cant.toString();
-								resultStatistic[5] = Herramientas.toPrice(pMin.toString());
-								resultStatistic[6] = Herramientas.toPrice(pMax.toString());
-								resultStatistic[7] = Herramientas.toPrice(pMean.toString());
-								statistics.add(resultStatistic);
-								context.insertStatistics(resultStatistic);
+								/* Agregamos el precio a la lista de precios */
+								precios.add(Integer.parseInt(precio));
+
+								// pSum += Integer.parseInt(precio);
+								// System.out.println(marca+" "+modelo+"
+								// "+titulo+" "+precio+" "+link);
+							} catch (java.lang.StringIndexOutOfBoundsException e) {
+								System.out.println("No se pudo obtener todos los datos de la publicacion: " + link);
 							}
 
-							break;
-						}
-
-						else {
-							while (source.contains("<span class=\"price\">")) {
-								if (!runScan) {
-									return;
-								}
-								String link = "No se puede obtener el link";
-								try {
-									source = source.substring(source.indexOf("class=\"thumbs_subject\""), source.length());
-									source = source.substring(source.indexOf("<a href=\"") + 9, source.length());
-									link = source.substring(0, source.indexOf("\""));
-									source = source.substring(source.indexOf("class=\"title\">") + 14, source.length());
-									String titulo = source.substring(0, source.indexOf("</a>"));
-									source = source.substring(source.indexOf("span class=\"price\">$ ") + 21,
-											source.length());
-									String precio = source.substring(0, source.indexOf("</span>")).replaceAll("\\.", "");
-									data.add(new String[] { fila.get(1), fila.get(3), year.toString(), titulo, precio,
-											link });
-
-									cant++;
-
-									/*
-									 * if(pMin>Integer.parseInt(precio)) pMin =
-									 * Integer.parseInt(precio);
-									 * if(pMax<Integer.parseInt(precio)) pMax =
-									 * Integer.parseInt(precio);
-									 */
-
-									/* Agregamos el precio a la lista de precios */
-									precios.add(Integer.parseInt(precio));
-
-								} catch (java.lang.StringIndexOutOfBoundsException e) {
-									System.out.println("No se pudo obtener todos los datos de la publicacion: " + link);
-								}
-
-							}
 						}
 					}
-					
-					progressCounter++;
-					
-					/* Actualizamos la barra de progreso */
-					//System.out.println(progressCounter+"/" + BMIndexs.size()* (ANO_MAX - ANO_MIN + 1));
-					context.setProgress(progressCounter * 100/(BMIndexs.size() * (ANO_MAX - ANO_MIN + 1) * selected_regions_names.size()));
 				}
+				
+				progressCounter++;
+				
+				/* Actualizamos la barra de progreso */
+				//System.out.println(progressCounter+"/"+BMIndexs.size()* (ANO_MAX - ANO_MIN + 1));
+				context.setProgress(progressCounter * 100/(BMIndexs.size() * (ANO_MAX - ANO_MIN + 1)));
 			}
-			
 		}
 
 		if (!runScan) {

@@ -33,38 +33,43 @@ public class PopUpConfigurations implements ItemListener {
 	private JComboBox CB_AnoMin;
 	private JComboBox CB_AnoMax;
 	private JButton BT_GuardarConf;
+
+	private String[] LISTA_PRECIOS_MIN = new String[] { "0", "100.000", "150.000", "200.000", "250.000", "300.000",
+		"400.000", "500.000", "750.000", "1.000.000", "1.500.000", "2.000.000", "2.500.000", "3.000.000",
+		"4.000.000", "5.000.000", "7.500.000", "10.000.000", "15.000.000", "20.000.000", "25.000.000", "30.000.000",
+		"40.000.000", "50.000.000", "75.000.000" };
 	
-	private boolean isFirstTime = true;
-		
-	private JCheckBox chckbxTodas;
+	private String[] LISTA_PRECIOS_MAX = new String[] { "0", "100.000", "150.000", "200.000", "250.000", "300.000",
+		"400.000", "500.000", "750.000", "1.000.000", "1.500.000", "2.000.000", "2.500.000", "3.000.000",
+		"4.000.000", "5.000.000", "7.500.000", "10.000.000", "15.000.000", "20.000.000", "25.000.000", "30.000.000",
+		"40.000.000", "50.000.000", "75.000.000", "+75.000.000" };
+	
+	private String[] LISTA_ANOS = new String[] { "1960", "1961", "1962", "1963", "1964", "1965", "1966",
+		"1967", "1968", "1969", "1970", "1971", "1972", "1973", "1974", "1975", "1976", "1977", "1978", "1979",
+		"1980", "1981", "1982", "1983", "1984", "1985", "1986", "1987", "1988", "1989", "1990", "1991", "1992",
+		"1993", "1994", "1995", "1996", "1997", "1998", "1999", "2000", "2001", "2002", "2003", "2004", "2005",
+		"2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015" };
+	
 	private ArrayList<JCheckBox> checkBoxesList = new ArrayList<JCheckBox>();
 	
 	private MainWindow context;
 	
 	
-	
 	public void show(){
-		
-		frame.setVisible(true);
-		
-		CB_PrecioMax.setSelectedIndex(Integer.parseInt(context.indexPrecioMax));
-		CB_PrecioMin.setSelectedIndex(Integer.parseInt(context.indexPrecioMin));
-		
-		for(int i=0; i<Constants.LISTA_ANOS.length;i++){
-			if(Constants.LISTA_ANOS[i].equals(context.anoMax)){
-				CB_AnoMax.setSelectedIndex(i);
-				break;
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					PopUpConfigurations window = new PopUpConfigurations(context);
+					window.frame.setTitle("Configuracion de Parámetros");
+					window.frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
-		}
-		
-		for(int i=0; i<Constants.LISTA_ANOS.length;i++){
-			if(Constants.LISTA_ANOS[i].equals(context.anoMin)){
-				CB_AnoMin.setSelectedIndex(i);
-				break;
-			}
-		}
+		});
 	}
 	
+
 	/**
 	 * Create the application.
 	 */
@@ -80,7 +85,6 @@ public class PopUpConfigurations implements ItemListener {
 		frame = new JFrame();
 		frame.setBounds(100, 100, 388, 473);
 		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-		frame.setTitle("Configuracion de Parámetros");
 		
 		JLabel lblPrecioMnimo = new JLabel("Precio M\u00EDnimo:");
 		
@@ -90,9 +94,11 @@ public class PopUpConfigurations implements ItemListener {
 		
 		JLabel lblAoMximo = new JLabel("A\u00F1o M\u00E1ximo:");
 		
-		CB_PrecioMin = new JComboBox(Constants.LISTA_PRECIOS_MIN);
+		CB_PrecioMin = new JComboBox(LISTA_PRECIOS_MIN);
+		CB_PrecioMin.setSelectedIndex(Integer.parseInt(context.indexPrecioMin));
 				
-		CB_PrecioMax = new JComboBox(Constants.LISTA_PRECIOS_MAX);
+		CB_PrecioMax = new JComboBox(LISTA_PRECIOS_MAX);
+		CB_PrecioMax.setSelectedIndex(Integer.parseInt(context.indexPrecioMax));
 			
 		CB_PrecioMin.addActionListener (new ActionListener () {
 		    public void actionPerformed(ActionEvent e) {
@@ -114,9 +120,21 @@ public class PopUpConfigurations implements ItemListener {
 		    }
 		});
 		
-		CB_AnoMin = new JComboBox(Constants.LISTA_ANOS);
+		CB_AnoMin = new JComboBox(LISTA_ANOS);
+		for(int i=0; i<LISTA_ANOS.length;i++){
+			if(LISTA_ANOS[i].equals(context.anoMin)){
+				CB_AnoMin.setSelectedIndex(i);
+				break;
+			}
+		}
 		
-		CB_AnoMax = new JComboBox(Constants.LISTA_ANOS);
+		CB_AnoMax = new JComboBox(LISTA_ANOS);
+		for(int i=0; i<LISTA_ANOS.length;i++){
+			if(LISTA_ANOS[i].equals(context.anoMax)){
+				CB_AnoMax.setSelectedIndex(i);
+				break;
+			}
+		}
 		
 		CB_AnoMin.addActionListener (new ActionListener () {
 		    public void actionPerformed(ActionEvent e) {
@@ -133,7 +151,7 @@ public class PopUpConfigurations implements ItemListener {
 		        }
 		    }
 		});
-				
+		
 		BT_GuardarConf = new JButton("Guardar");
 		BT_GuardarConf.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
@@ -144,8 +162,7 @@ public class PopUpConfigurations implements ItemListener {
 				for(int i=0; i<context.regiones.length;i++){
 					context.regiones[i] = checkBoxesList.get(i).isSelected();
 				}
-				frame.setVisible(false);
-				//frame.hide();
+				frame.hide();
 			}
 		});
 		
@@ -219,7 +236,7 @@ public class PopUpConfigurations implements ItemListener {
 		scrollPane.setViewportView(panel);
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		
-		chckbxTodas = new JCheckBox("Todas");
+		JCheckBox chckbxTodas = new JCheckBox("Todas");
 		chckbxTodas.addItemListener(this);
 		panel.add(chckbxTodas);
 		
@@ -296,8 +313,6 @@ public class PopUpConfigurations implements ItemListener {
 		}
 		if(shouldSel)
 			chckbxTodas.setSelected(true);
-		
-		
 	}
 	
 	public void itemStateChanged(ItemEvent ie) {
@@ -321,11 +336,6 @@ public class PopUpConfigurations implements ItemListener {
 			CB_AnoMin.setEnabled(false);
 			CB_AnoMax.setEnabled(false);
 			BT_GuardarConf.setEnabled(false);
-			chckbxTodas.setEnabled(false);
-			
-			for(JCheckBox box : checkBoxesList){
-				box.setEnabled(false);
-			}
 		}catch(NullPointerException e){
 			
 		}
@@ -338,11 +348,6 @@ public class PopUpConfigurations implements ItemListener {
 			CB_AnoMin.setEnabled(true);
 			CB_AnoMax.setEnabled(true);
 			BT_GuardarConf.setEnabled(true);
-			chckbxTodas.setEnabled(true);
-			
-			for(JCheckBox box : checkBoxesList){
-				box.setEnabled(true);
-			}
 		}catch(NullPointerException e){
 			
 		}
