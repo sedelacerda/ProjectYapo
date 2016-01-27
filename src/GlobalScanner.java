@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.sql.*;
 
 import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
@@ -24,7 +25,7 @@ public class GlobalScanner extends Scanner {
 	private long startTime = 0;
 	private int carsFoundQuantity = 0;
 	private int carsDeletedQuantity = 0;
-	
+
 	private int progressCounter = 0;
 
 	private ArrayList<ArrayList<String>> BMIndexs = new ArrayList<ArrayList<String>>();
@@ -46,8 +47,8 @@ public class GlobalScanner extends Scanner {
 	 * @throws IOException
 	 */
 	public void scanAllYapoCars() throws IOException {
-		
-		
+
+
 		TimerTask timerTask = new TimerTask() {
 			@Override
 			public void run() {
@@ -59,15 +60,11 @@ public class GlobalScanner extends Scanner {
 		/* 86.400.000 milisegundos = 1 dia */
 		//ti.schedule(timerTask, 86400000);
 		ti.schedule(timerTask, 3600000);
-		
+
 		if (runScan) {
 			endTimeShowerCounter = 0;
 			startTime = System.currentTimeMillis();
-			try {
-				fillBrandsAndModelsIndexs();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
+			loadBMIndexs();
 
 			if (runScan) {
 				for (int t = 0; t < Constants.CANT_SCAN_THREADS; t++) {
@@ -82,13 +79,13 @@ public class GlobalScanner extends Scanner {
 									scanSomeYapoCars(partition[0], partition[1]);
 									System.out.println(endThreadCounter);
 									showEndTime();
-									
+
 									if (Constants.CANT_SCAN_THREADS <= endThreadCounter) {
-										
+
 										context.setProgress(100);
 										/* Guardamos la informacion de la busqueda */
 										saveLastScanDataToFile();
-										
+
 										/* Avisamos que se termino el scan diario */
 										context.insertNewProgramCurrentState(
 												"El scan diario ha terminado! Pronto comenzará un nuevo scan para encontrar nuevas publicaciones.",
@@ -102,13 +99,13 @@ public class GlobalScanner extends Scanner {
 
 										// Ordenamos el array segun el nombre de la marca
 										try{
-										Arrays.sort(outStatistics, new Comparator<String[]>() {
-											public int compare(final String[] entry1, final String[] entry2) {
-												final String brand1 = entry1[0];
-												final String brand2 = entry2[0];
-												return brand1.compareTo(brand2);
-											}
-										});
+											Arrays.sort(outStatistics, new Comparator<String[]>() {
+												public int compare(final String[] entry1, final String[] entry2) {
+													final String brand1 = entry1[0];
+													final String brand2 = entry2[0];
+													return brand1.compareTo(brand2);
+												}
+											});
 										} catch(NullPointerException e){
 											e.printStackTrace();
 										}
@@ -123,7 +120,7 @@ public class GlobalScanner extends Scanner {
 											emailSender.sendFileEmail("(Testing)Daily Yapo statistics",
 													"En el archivo adjunto se podra observar las estadisticas de los autos entre los años "
 															+ context.anoMin + " y el " + context.anoMax,
-													new String[] { "Estadisticas.xls" }, Usuarios.getAllEmails());
+															new String[] { "Estadisticas.xls" }, Usuarios.getAllEmails());
 											/*
 											Email.sendFileEmail("Daily Yapo statistics",
 													"En el archivo adjunto se podra observar las estadisticas de los autos entre los años "
@@ -131,7 +128,7 @@ public class GlobalScanner extends Scanner {
 													new String[] { "Estadisticas.xls" }, Usuarios.getAllEmails());
 											 */
 											/* Comenzamos el local scanner */
-											
+
 											context.runLocalScanner();
 										} catch (WriteException e) {
 											e.printStackTrace();
@@ -160,7 +157,7 @@ public class GlobalScanner extends Scanner {
 			context.insertNewProgramCurrentState(
 					"Tiempo total: " + (endTime - startTime) / 1000 + " segundos.\nEquivale a "
 							+ (endTime - startTime) / 60000 + " minutos.\nCantidad de errores: " + errorCounter,
-					Color.BLUE, false);
+							Color.BLUE, false);
 			context.insertNewProgramCurrentState("Numero de publicaciones: " + carsFoundQuantity 
 					+ "\nNumero de publicaciones filtradas: " + (carsFoundQuantity-carsDeletedQuantity) 
 					+ "\nNumero final de publicaciones: "+ carsDeletedQuantity, Color.BLACK, false);
@@ -224,11 +221,11 @@ public class GlobalScanner extends Scanner {
 						Integer pMean = 0;
 
 						if (cant > 0) {
-							
+
 							carsFoundQuantity += precios.size();
 							precios = removeOutliers(precios);
 							carsDeletedQuantity += precios.size();
-							
+
 							DescriptiveStatistics ds = new DescriptiveStatistics();
 							for (Integer p : precios) {
 								ds.addValue(p);
@@ -299,9 +296,9 @@ public class GlobalScanner extends Scanner {
 						}
 					}
 				}
-				
+
 				progressCounter++;
-				
+
 				/* Actualizamos la barra de progreso */
 				//System.out.println(progressCounter+"/"+BMIndexs.size()* (ANO_MAX - ANO_MIN + 1));
 				context.setProgress(progressCounter * 100/(BMIndexs.size() * (ANO_MAX - ANO_MIN + 1)));
@@ -389,7 +386,7 @@ public class GlobalScanner extends Scanner {
 			ArrayList<String[]> models = getModelsIndexs(Integer.parseInt(index));
 			final String index2 = index;
 			final String brand2 = brand;
-			
+
 			for (String[] model : models) {
 				final String m0 = model[0];
 				final String m1 = model[1];
@@ -410,12 +407,84 @@ public class GlobalScanner extends Scanner {
 		 * System.out.print(fila.get(0)+" "+fila.get(1));
 		 * System.out.print("\n"); } System.out.println("MarcasXModelos = "+i);
 		 */
-		if (runScan) {
-			context.insertNewProgramCurrentState("Filtrando marcas...", Color.BLACK, true);
-			BMIndexs = Herramientas.filterBrands(BMIndexs);
-			context.insertNewProgramCurrentState("Iniciando el scan...", Color.BLACK, true);
-		}
 
+		//#############################################################
+
+		Connection c = null;
+		Statement stmt = null;
+		try {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
+			c.setAutoCommit(false);
+			context.insertNewProgramCurrentState("Accediendo a la base de datos...", Color.BLACK, true);
+
+
+			stmt = c.createStatement();
+			String sql = "DELETE FROM BrandsModelsIndexs;";
+			stmt.executeUpdate(sql);
+			for(ArrayList<String> BMIndexsRow : BMIndexs){
+				sql = "INSERT INTO BrandsModelsIndexs VALUES (" + BMIndexsRow.get(0) + ", '" + BMIndexsRow.get(1) + 
+						"', " + BMIndexsRow.get(2) + ", '" + BMIndexsRow.get(3) + "');"; 
+				stmt.executeUpdate(sql);
+			}
+
+			stmt.close();
+			c.commit();
+			c.close();
+		} catch ( Exception e ) {
+			System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+			System.exit(0);
+		}
+		context.insertNewProgramCurrentState("Datos guardados satisfactoriamente en la base de datos!", Color.BLACK, true);
+
+		//#########################################################################
+
+		context.insertNewProgramCurrentState("Iniciando el scan...", Color.BLACK, true);
+
+	}
+
+	/** loadBMIndexs toma los indices marca - modelo que se encuentran en la
+	 * base de datos y los guarda en el arreglo BMIndexs
+	 */
+	private void loadBMIndexs(){
+
+		BMIndexs = new ArrayList<ArrayList<String>>();
+
+		Connection c = null;
+		Statement stmt = null;
+		try {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
+			c.setAutoCommit(false);
+			System.out.println("Accediendo a la base de datos...");
+
+			stmt = c.createStatement();
+			ResultSet rs = stmt.executeQuery( "SELECT * FROM BrandsModelsIndexs;" );
+			while ( rs.next() ) {
+				int brandIndex = rs.getInt("brandIndex");
+				String brandName = rs.getString("brandName");
+				int modelIndex = rs.getInt("modelIndex");
+				String modelName = rs.getString("modelName");
+				
+				ArrayList<String> BM = new ArrayList<String>();
+				BM.add(brandIndex+"");
+				BM.add(brandName);
+				BM.add(modelIndex+"");
+				BM.add(modelName);
+				BMIndexs.add(BM);
+				
+			}
+			rs.close();
+			stmt.close();
+			c.close();
+		} catch ( Exception e ) {
+			System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+			System.exit(0);
+		}
+		context.insertNewProgramCurrentState("Indices de marcas y modelos cargados correctamente", Color.BLACK, true);
+
+		context.insertNewProgramCurrentState("Filtrando marcas...", Color.BLACK, true);
+		BMIndexs = Herramientas.filterBrands(BMIndexs);
 	}
 
 	/**

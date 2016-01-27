@@ -283,6 +283,21 @@ public class MainWindow {
 		JMenuItem mntmParametros = new JMenuItem("Par\u00E1metros");
 		mnNewMenu.add(mntmParametros);
 		
+		JMenu mnEjecutar = new JMenu("Ejecutar");
+		menuBar.add(mnEjecutar);
+		
+
+		JMenuItem mntmActualizarModelos = new JMenuItem(new AbstractAction("Actualizar modelos y marcas") {
+		    
+			public void actionPerformed(ActionEvent ae) {
+				try{
+					runBMIndexsUpdate();
+				} catch(ParseException e){}
+		    }
+		});
+		
+		mnEjecutar.add(mntmActualizarModelos);;
+
 		setConnectionStatus(false);
 		
 		popUpConfig = new PopUpConfigurations(MainWindow.this);
@@ -346,6 +361,25 @@ public class MainWindow {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public void runBMIndexsUpdate(){
+		progressBar.setVisible(true);
+		progressBar.setValue(0);
+		lblFaltanMinutos.setVisible(false);
+		
+		Thread updateBMIndexs = new Thread() {
+			@Override
+			public void run() {
+				try {
+					globalScan.fillBrandsAndModelsIndexs();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		};
+
+		updateBMIndexs.start();
 	}
 	
 	public void runGlobalScanner() {

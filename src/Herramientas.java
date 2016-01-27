@@ -48,8 +48,10 @@ public class Herramientas {
 		// Copiamos solo las marcas que deseamos al arraylist out
 		for (String index : marcas) {
 			for (ArrayList<String> par : paresModeloMarca) {
-				if (index.equals(par.get(0)))
+				if (index.equals(par.get(0))){
 					out.add(par);
+					System.out.println(par.size() + " - " +par.get(0) + " - " + par.get(1)+ " - "+ par.get(2) + " - " + par.get(3));
+				}
 			}
 		}
 
