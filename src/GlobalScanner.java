@@ -456,7 +456,7 @@ public class GlobalScanner extends Scanner {
 			Class.forName("org.sqlite.JDBC");
 			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
 			c.setAutoCommit(false);
-			System.out.println("Accediendo a la base de datos...");
+			context.insertNewProgramCurrentState("Accediendo a la base de datos...", Color.BLACK, true);
 
 			stmt = c.createStatement();
 			ResultSet rs = stmt.executeQuery( "SELECT * FROM BrandsModelsIndexs;" );

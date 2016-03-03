@@ -1,8 +1,13 @@
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -50,7 +55,6 @@ public class Herramientas {
 			for (ArrayList<String> par : paresModeloMarca) {
 				if (index.equals(par.get(0))){
 					out.add(par);
-					System.out.println(par.size() + " - " +par.get(0) + " - " + par.get(1)+ " - "+ par.get(2) + " - " + par.get(3));
 				}
 			}
 		}
@@ -119,11 +123,9 @@ public class Herramientas {
 		  builder.start();
 		  System.exit(0);
 		  System.out.println("No se pudo cerrar");
-		  } catch (URISyntaxException e) {			  
-			  // TODO Auto-generated catch block
+		  } catch (URISyntaxException e) {			
 			  e.printStackTrace();			  
 		  } catch (IOException e) {
-			  // TODO Auto-generated catch block
 			  e.printStackTrace();
 		}
 	}
@@ -133,38 +135,32 @@ public class Herramientas {
 	 * @return
 	 */
 	public static String getLastTimeScanTime(){
-		String fileHour = "00";
-		String fileMin = "00";
-		String fileSec = "00";
-		File file = new File("lastTimeData.txt");
+				
+		String fileTime = "";
 		
-		BufferedReader br;
+		Connection c = null;
+		Statement stmt = null;
 		try {
-			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
-			boolean foundHour = false;
-			String line;
-			while ((line = br.readLine()) != null) {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
+			c.setAutoCommit(false);
 
-				if (line.contains("<HORA>")) {
-					fileHour = line.substring(line.indexOf("<HORA>") + 6, line.indexOf(":"));
-					if (fileHour.length() < 2)
-						fileHour = "0" + fileHour;
-					line = line.substring(line.indexOf(":") + 1, line.length());
-					fileMin = line.substring(0, line.indexOf(":"));
-					if (fileMin.length() < 2)
-						fileMin = "0" + fileMin;
-					foundHour = true;
-				}
-
-				if (foundHour)
-					break;
+			stmt = c.createStatement();
+			
+			ResultSet rs = stmt.executeQuery( "SELECT hora FROM UltimaBusqueda;" );
+			while ( rs.next() ) {
+				fileTime = rs.getString("hora");
 			}
-
-		} catch (IOException e) {
-			System.out.print("No se pudo encontrar la hora en el archivo lastTimeData.txt");
+			
+			rs.close();
+			stmt.close();
+			c.close();
+		} catch ( Exception e ) {
+			System.out.print("No se pudo encontrar la fecha en la base de datos");
 		}
 		
-		return fileHour+":"+fileMin+":"+fileSec;
+		return fileTime;
+		
 	}
 	
 	/** getLastTimeScanDate revisa el archivo lastTimeScanData y retorna un string
@@ -173,37 +169,30 @@ public class Herramientas {
 	 */
 	public static String getLastTimeScanDate(){
 		
-		String fileDay = "01";
-		String fileMonth = "01";
-		String fileYear = "2015";
+		String fileDate = "";
 		
-		File file = new File("lastTimeData.txt");
-		
-		BufferedReader br;
+		Connection c = null;
+		Statement stmt = null;
 		try {
-			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
-			boolean foundDate = false;
-			String line;
-			while ((line = br.readLine()) != null) {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
+			c.setAutoCommit(false);
 
-				if (line.contains("<FECHA>")) {
-					fileDay = line.substring(line.indexOf("<FECHA>") + 7, line.indexOf("-"));
-					line = line.substring(line.indexOf("-") + 1, line.length());
-					fileMonth = line.substring(0, line.indexOf("-"));
-					line = line.substring(line.indexOf("-") + 1, line.length());
-					fileYear = line.substring(0, line.indexOf("</FECHA>"));
-					foundDate = true;
-				}
-
-				if (foundDate)
-					break;
+			stmt = c.createStatement();
+			
+			ResultSet rs = stmt.executeQuery( "SELECT fecha FROM UltimaBusqueda;" );
+			while ( rs.next() ) {
+				fileDate = rs.getString("fecha");
 			}
-
-		} catch (IOException e) {
-			System.out.print("No se pudo encontrar la fecha en el archivo lastTimeData.txt");
+			
+			rs.close();
+			stmt.close();
+			c.close();
+		} catch ( Exception e ) {
+			System.out.print("No se pudo encontrar la fecha en la base de datos");
 		}
 		
-		return fileDay + "/" + fileMonth + "/" + fileYear;
+		return fileDate;
 	}
 	
 	/** getLastTimeScanMinYear revisa el archivo lastTimeScanData y retorna un string
@@ -212,28 +201,27 @@ public class Herramientas {
 	 */
 	public static String getLastTimeScanMinYear(){
 		
-		String fileMinYear = "2014";
+		String fileMinYear = "";
 		
-		File file = new File("lastTimeData.txt");
-		
-		BufferedReader br;
+		Connection c = null;
+		Statement stmt = null;
 		try {
-			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
-			boolean foundMinYear = false;
-			String line;
-			while ((line = br.readLine()) != null) {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
+			c.setAutoCommit(false);
 
-				if (line.contains("<ANO MIN>")) {
-					fileMinYear = line.substring(line.indexOf("<ANO MIN>") + 9, line.indexOf("</ANO MIN>"));
-					foundMinYear = true;
-				}
-
-				if (foundMinYear)
-					break;
+			stmt = c.createStatement();
+			
+			ResultSet rs = stmt.executeQuery( "SELECT anoMin FROM UltimaBusqueda;" );
+			while ( rs.next() ) {
+				fileMinYear = rs.getString("anoMin");
 			}
-
-		} catch (IOException e) {
-			System.out.print("No se pudo encontrar el año mínimo en el archivo lastTimeData.txt");
+			
+			rs.close();
+			stmt.close();
+			c.close();
+		} catch ( Exception e ) {
+			System.out.print("No se pudo encontrar el año mínimo en la base de datos");
 		}
 		
 		return fileMinYear;
@@ -245,28 +233,27 @@ public class Herramientas {
 	 */
 	public static String getLastTimeScanMaxYear(){
 		
-		String fileMaxYear = "2015";
+		String fileMaxYear = "";
 		
-		File file = new File("lastTimeData.txt");
-		
-		BufferedReader br;
+		Connection c = null;
+		Statement stmt = null;
 		try {
-			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
-			boolean foundMaxYear = false;
-			String line;
-			while ((line = br.readLine()) != null) {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
+			c.setAutoCommit(false);
 
-				if (line.contains("<ANO MAX>")) {
-					fileMaxYear = line.substring(line.indexOf("<ANO MAX>") + 9, line.indexOf("</ANO MAX>"));
-					foundMaxYear = true;
-				}
-
-				if (foundMaxYear)
-					break;
+			stmt = c.createStatement();
+			
+			ResultSet rs = stmt.executeQuery( "SELECT anoMax FROM UltimaBusqueda;" );
+			while ( rs.next() ) {
+				fileMaxYear = rs.getString("anoMax");
 			}
-
-		} catch (IOException e) {
-			System.out.print("No se pudo encontrar el año máximo en el archivo lastTimeData.txt");
+			
+			rs.close();
+			stmt.close();
+			c.close();
+		} catch ( Exception e ) {
+			System.out.print("No se pudo encontrar el año máximo en la base de datos");
 		}
 		
 		return fileMaxYear;
@@ -278,28 +265,27 @@ public class Herramientas {
 	 */
 	public static String getLastTimeScanMinPriceIndex(){
 		
-		String fileMinPriceIndex = "0";
+		String fileMinPriceIndex = "";
 		
-		File file = new File("lastTimeData.txt");
-		
-		BufferedReader br;
+		Connection c = null;
+		Statement stmt = null;
 		try {
-			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
-			boolean foundMinPriceIndex = false;
-			String line;
-			while ((line = br.readLine()) != null) {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
+			c.setAutoCommit(false);
 
-				if (line.contains("<INDEX PRECIO MIN>")) {
-					fileMinPriceIndex = line.substring(line.indexOf("<INDEX PRECIO MIN>") + 18, line.indexOf("</INDEX PRECIO MIN>"));
-					foundMinPriceIndex = true;
-				}
-
-				if (foundMinPriceIndex)
-					break;
+			stmt = c.createStatement();
+			
+			ResultSet rs = stmt.executeQuery( "SELECT indexPrecioMin FROM UltimaBusqueda;" );
+			while ( rs.next() ) {
+				fileMinPriceIndex = rs.getString("indexPrecioMin");
 			}
-
-		} catch (IOException e) {
-			System.out.print("No se pudo encontrar el indice del precio minimo en el archivo lastTimeData.txt");
+			
+			rs.close();
+			stmt.close();
+			c.close();
+		} catch ( Exception e ) {
+			System.out.print("No se pudo encontrar el índice de precio mínimo en la base de datos");
 		}
 		
 		return fileMinPriceIndex;
@@ -311,27 +297,27 @@ public class Herramientas {
 	 */
 	public static String getLastTimeScanMaxPriceIndex(){
 		
-		String fileMaxPriceIndex = "20";
-		File file = new File("lastTimeData.txt");
+		String fileMaxPriceIndex = "";
 		
-		BufferedReader br;
+		Connection c = null;
+		Statement stmt = null;
 		try {
-			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
-			boolean foundMaxPriceIndex = false;
-			String line;
-			while ((line = br.readLine()) != null) {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
+			c.setAutoCommit(false);
 
-				if (line.contains("<INDEX PRECIO MAX>")) {
-					fileMaxPriceIndex = line.substring(line.indexOf("<INDEX PRECIO MAX>") + 18, line.indexOf("</INDEX PRECIO MAX>"));
-					foundMaxPriceIndex = true;
-				}
-
-				if (foundMaxPriceIndex)
-					break;
+			stmt = c.createStatement();
+			
+			ResultSet rs = stmt.executeQuery( "SELECT indexPrecioMax FROM UltimaBusqueda;" );
+			while ( rs.next() ) {
+				fileMaxPriceIndex = rs.getString("indexPrecioMax");
 			}
-
-		} catch (IOException e) {
-			System.out.print("No se pudo encontrar el indice de precio maximo en el archivo lastTimeData.txt");
+			
+			rs.close();
+			stmt.close();
+			c.close();
+		} catch ( Exception e ) {
+			System.out.print("No se pudo encontrar el índice de precio máximo en la base de datos");
 		}
 		
 		return fileMaxPriceIndex;
@@ -344,33 +330,32 @@ public class Herramientas {
 	 * @return
 	 */
 	public static boolean getLastTimeScanShouldRestart(){
+				
+		Integer fileRestart = 0;
 		
-		String fileShouldRestart = "false";
-		File file = new File("lastTimeData.txt");
-		
-		BufferedReader br;
+		Connection c = null;
+		Statement stmt = null;
 		try {
-			br = new BufferedReader(new FileReader(file.getAbsolutePath()));
-			boolean foundShouldRestart = false;
-			String line;
-			while ((line = br.readLine()) != null) {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
+			c.setAutoCommit(false);
 
-				if (line.contains("<REINICIAR>")) {
-					fileShouldRestart = line.substring(line.indexOf("<REINICIAR>") + 11, line.indexOf("</REINICIAR>"));
-					foundShouldRestart = true;
-				}
-
-				if (foundShouldRestart)
-					break;
+			stmt = c.createStatement();
+			
+			ResultSet rs = stmt.executeQuery( "SELECT reiniciar FROM UltimaBusqueda;" );
+			while ( rs.next() ) {
+				fileRestart = rs.getInt("reiniciar");
 			}
-
-		} catch (IOException e) {
-			System.out.print("No se pudo encontrar el indice de precio maximo en el archivo lastTimeData.txt");
+			
+			rs.close();
+			stmt.close();
+			c.close();
+		} catch ( Exception e ) {
+			System.out.print("No se pudo encontrar la variable 'reiniciar' en la base de datos");
 		}
 		
-		if(fileShouldRestart.toLowerCase().equals("true"))
+		if(fileRestart > 1)
 			return true;
-		
 		else
 			return false;
 	}

@@ -10,6 +10,9 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URL;
 import java.net.URLConnection;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
 
@@ -60,18 +63,31 @@ public abstract class Scanner {
 	public void saveLastScanDataToFile(boolean shouldStartOver) {
 		Writer writer;
 		java.util.TimeZone tz = java.util.TimeZone.getTimeZone(Constants.ZONA_HORARIA);
-		java.util.Calendar c = java.util.Calendar.getInstance(tz);
+		java.util.Calendar cal = java.util.Calendar.getInstance(tz);
+		
+		System.out.println(cal.get(java.util.Calendar.HOUR_OF_DAY) + ":" + cal.get(java.util.Calendar.MINUTE) + ":"
+				+ cal.get(java.util.Calendar.SECOND));
 
-		System.out.println(c.get(java.util.Calendar.HOUR_OF_DAY) + ":" + c.get(java.util.Calendar.MINUTE) + ":"
-				+ c.get(java.util.Calendar.SECOND));
-
+		int mes = cal.get(Calendar.MONTH) + 1;
+		
+		String hh = cal.get(Calendar.HOUR_OF_DAY) + "";
+		String mm = cal.get(Calendar.MINUTE) + "";
+		String ss = cal.get(Calendar.SECOND) + "";
+		while(hh.length()<2)
+			hh = "0" + hh;
+		while(mm.length()<2)
+			mm = "0" + mm;
+		while(ss.length()<2)
+			ss = "0" + ss;
+		
+		String hora = hh + ":" + mm + ":" + ss;
+		String fecha = cal.get(Calendar.DAY_OF_MONTH) + "/" + mes + "/" + cal.get(Calendar.YEAR);
+		
 		try {
 			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("lastTimeData.txt"), "utf-8"));
-			int mes = c.get(Calendar.MONTH) + 1;
-			writer.write("<HORA>" + c.get(Calendar.HOUR_OF_DAY) + ":" + c.get(Calendar.MINUTE) + ":"
-					+ c.get(Calendar.SECOND) + "</HORA>");
+			writer.write("<HORA>" + hora + "</HORA>");
 			writer.write(System.getProperty("line.separator"));
-			writer.write("<FECHA>" + c.get(Calendar.DAY_OF_MONTH) + "-" + mes + "-" + c.get(Calendar.YEAR) + "</FECHA>");
+			writer.write("<FECHA>" + fecha + "</FECHA>");
 			writer.write(System.getProperty("line.separator"));
 			writer.write("<ANO MIN>" + ANO_MIN + "</ANO MIN>");
 			writer.write(System.getProperty("line.separator"));
@@ -90,6 +106,40 @@ public abstract class Scanner {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		//#####################################################
+		
+		 
+		int restart = 0;
+		if (shouldStartOver)
+			restart = 1;
+		
+		Connection c = null;
+		Statement stmt = null;
+		try {
+			Class.forName("org.sqlite.JDBC");
+			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
+			c.setAutoCommit(false);
+			context.insertNewProgramCurrentState("Accediendo a la base de datos...", Color.BLACK, true);
+
+
+			stmt = c.createStatement();
+			String sql = "DELETE FROM UltimaBusqueda;";
+			stmt.executeUpdate(sql);
+			sql = "INSERT INTO UltimaBusqueda VALUES ('" + hora + "', '" + fecha + 
+					"', " + ANO_MIN + ", " + ANO_MAX + ", " + INDEX_PRECIO_MIN + 
+					", " + INDEX_PRECIO_MAX + ", " + restart + ");"; 
+			stmt.executeUpdate(sql);
+
+			stmt.close();
+			c.commit();
+			c.close();
+		} catch ( Exception e ) {
+			System.err.println( e.getClass().getName() + ": " + e.getMessage() );
+			System.exit(0);
+		}
+		context.insertNewProgramCurrentState("Datos de ultima busqueda guardados satisfactoriamente en la base de datos!", Color.GREEN, true);
+		//#####################################################
 	}
 
 	/**

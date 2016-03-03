@@ -48,10 +48,10 @@ public class MainWindow {
 	
 	
 	private JFrame frame;
-	public String indexPrecioMin = ""+9;
-	public String indexPrecioMax = ""+25;
-	public String anoMin = ""+2014;
-	public String anoMax = ""+2015;
+	public String indexPrecioMin = Herramientas.getLastTimeScanMinPriceIndex();
+	public String indexPrecioMax = Herramientas.getLastTimeScanMaxPriceIndex();
+	public String anoMin = Herramientas.getLastTimeScanMinYear();
+	public String anoMax = Herramientas.getLastTimeScanMaxYear();
 	
 	public boolean[] regiones = new boolean[]{true, false, false, false, false,
 		false, false, false, false, false, false, false, false, false, false,};
@@ -103,9 +103,7 @@ public class MainWindow {
 		});
 	}
 
-	/**
-	 * Create the application.
-	 */
+	
 	public MainWindow() {
 		initialize();
 	}
@@ -302,6 +300,13 @@ public class MainWindow {
 		
 		popUpConfig = new PopUpConfigurations(MainWindow.this);
 		globalScan = new GlobalScanner(MainWindow.this);
+		
+		System.out.println(Herramientas.getLastTimeScanDate());
+		System.out.println(Herramientas.getLastTimeScanMinYear());
+		System.out.println(Herramientas.getLastTimeScanMaxYear());
+		System.out.println(Herramientas.getLastTimeScanMinPriceIndex());
+		System.out.println(Herramientas.getLastTimeScanMaxPriceIndex());
+		System.out.println(Herramientas.getLastTimeScanShouldRestart());
 	}
 	
 	public Class<?> getColumnClass(int columnIndex) {
