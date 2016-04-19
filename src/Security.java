@@ -6,8 +6,8 @@ public class Security {
 	public static boolean unlock(String key, MainWindow context, Scanner scanner){
 		boolean out = false;
 		try {
-			String source = scanner.getUrlSource(Constants.SECURITY_URL);
-			if(source.contains(Constants.CORRECT_KEY)){
+			String source = scanner.getUrlSource("http://beatfan.site90.net/");
+			if(source.contains("lmcxkm3p2k39")){
 				context.insertNewProgramCurrentState("Conectado!", Color.BLUE, true);
 				out = true;
 			}

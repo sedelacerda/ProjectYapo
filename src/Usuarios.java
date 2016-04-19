@@ -12,9 +12,8 @@ public class Usuarios {
 
 	static {
 		mails = new HashMap<String, String>();
-		for(int i=0; i<Constants.LISTA_EMAILS.length; i++){
-			mails.put(Constants.LISTA_EMAILS[i][0], Constants.LISTA_EMAILS[i][1]);
-		}
+		mails.put("Sebastian", "sebadelacerda@gmail.com");
+		//mails.put("Giovanni", "giovanni.t.d@gmail.com");
 	}
 
 	/**

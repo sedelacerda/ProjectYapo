@@ -18,9 +18,11 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 public class Email {
-	
+
+	private final static String ADMIN_EMAIL = "projectyapo@gmail.com";
+	private final static String ADMIN_PASS = "giulietta2015";
 	private MainWindow context;
-	
+
 	public Email(MainWindow mainWindow){
 		context = mainWindow;
 	}
@@ -32,8 +34,8 @@ public class Email {
 		Properties props = System.getProperties();
 		props.put("mail.smtp.starttls.enable", true);
 		props.put("mail.smtp.host", host);
-		props.put("mail.smtp.user", Constants.ADMIN_EMAIL);
-		props.put("mail.smtp.password", Constants.ADMIN_PASS);
+		props.put("mail.smtp.user", ADMIN_EMAIL);
+		props.put("mail.smtp.password", ADMIN_PASS);
 		props.put("mail.smtp.port", 587);
 		props.put("mail.smtp.auth", true);
 
@@ -43,7 +45,7 @@ public class Email {
 
 		try {
 
-			mimeMessage.setFrom(new InternetAddress(Constants.ADMIN_EMAIL));
+			mimeMessage.setFrom(new InternetAddress(ADMIN_EMAIL));
 			InternetAddress[] toAddress = new InternetAddress[to.length];
 
 			for (int i = 0; i < to.length; i++) {
@@ -64,19 +66,19 @@ public class Email {
 			if (1 < toAddress.length)
 				context.insertNewProgramCurrentState(
 						"Enviando email con asunto \"" + subject + "\" a " + toAddress.length + " usuarios.",
-						Color.BLUE, false);
+						Color.BLACK, false);
 
 			else
 				context.insertNewProgramCurrentState(
-						"Enviando email con asunto \"" + subject + "\" a " + toAddress[0] + ".", Color.BLUE, false);
+						"Enviando email con asunto \"" + subject + "\" a " + toAddress[0] + ".", Color.BLACK, false);
 
 			Transport transport = session.getTransport("smtp");
-			transport.connect(host, Constants.ADMIN_EMAIL, Constants.ADMIN_PASS);
+			transport.connect(host, ADMIN_EMAIL, ADMIN_PASS);
 			transport.sendMessage(mimeMessage, mimeMessage.getAllRecipients());
 			transport.close();
 
 		} catch (MessagingException e) {
-			context.insertNewProgramCurrentState("Error al enviar email.", Color.RED, false);
+			context.insertNewProgramCurrentState("Error al enviar email.", Color.BLACK, false);
 			e.printStackTrace();
 		}
 	}
@@ -90,14 +92,14 @@ public class Email {
 		properties.put("mail.smtp.port", 587);
 		properties.put("mail.smtp.auth", "true");
 		properties.put("mail.smtp.starttls.enable", "true");
-		properties.put("mail.user", Constants.ADMIN_EMAIL);
-		properties.put("mail.password", Constants.ADMIN_PASS);
+		properties.put("mail.user", ADMIN_EMAIL);
+		properties.put("mail.password", ADMIN_PASS);
 
 		// creates a new session with an authenticator
 		Authenticator auth = new Authenticator() {
 			@Override
 			public PasswordAuthentication getPasswordAuthentication() {
-				return new PasswordAuthentication(Constants.ADMIN_EMAIL, Constants.ADMIN_PASS);
+				return new PasswordAuthentication(ADMIN_EMAIL, ADMIN_PASS);
 			}
 		};
 		Session session = Session.getInstance(properties, auth);
@@ -106,7 +108,7 @@ public class Email {
 		Message msg = new MimeMessage(session);
 
 		try {
-			msg.setFrom(new InternetAddress(Constants.ADMIN_EMAIL));
+			msg.setFrom(new InternetAddress(ADMIN_EMAIL));
 
 			InternetAddress[] toAddresses = new InternetAddress[to.length];
 
@@ -142,23 +144,23 @@ public class Email {
 
 			if (1 < to.length)
 				context.insertNewProgramCurrentState(
-						"Enviando email con asunto \"" + subject + "\" a " + to.length + " usuarios.", Color.BLUE, false);
+						"Enviando email con asunto \"" + subject + "\" a " + to.length + " usuarios.", Color.BLACK, false);
 
 			else
 				context.insertNewProgramCurrentState(
-						"Enviando email con asunto \"" + subject + "\" a " + to[0] + ".", Color.BLUE, false);
+						"Enviando email con asunto \"" + subject + "\" a " + to[0] + ".", Color.BLACK, false);
 
 			// sends the e-mail
 			Transport.send(msg);
 
 		} catch (AddressException e) {
-			context.insertNewProgramCurrentState("Error al enviar email.", Color.RED, false);
+			context.insertNewProgramCurrentState("Error al enviar email.", Color.BLACK, false);
 			e.printStackTrace();
 		} catch (MessagingException e) {
-			context.insertNewProgramCurrentState("Error al enviar email.", Color.RED, false);
+			context.insertNewProgramCurrentState("Error al enviar email.", Color.BLACK, false);
 			e.printStackTrace();
 		} catch (IOException ex) {
-			context.insertNewProgramCurrentState("Error al enviar email.", Color.RED, false);
+			context.insertNewProgramCurrentState("Error al enviar email.", Color.BLACK, false);
 			ex.printStackTrace();
 		}
 	}

@@ -1,7 +1,4 @@
-import java.awt.Color;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -13,14 +10,18 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 public class Herramientas {
+
+	//VIEJO
 	
+	public static int CANT_SCAN_THREADS = 8; // Cantidad de threads que se usan
+												// para hacer el scan de todos
+												// los autos de yapo (Main Scan)
 	public static String[] marcas; // Este arreglo ayuda a convertir de index
 									// imaginario a real (por ej: para
 									// particionar BMIndexs)
 
 	public static String toPrice(String precio) {
-		precio = precio.replace(".", "");
-		Integer precioint = Integer.parseInt(precio);
+		Integer precioint = Integer.parseInt(precio.replaceAll("\\.", ""));
 		String out = precio;
 		NumberFormat numberFormatter = NumberFormat.getNumberInstance(Locale.GERMANY);
 		out = numberFormatter.format(precioint);
@@ -53,9 +54,8 @@ public class Herramientas {
 		// Copiamos solo las marcas que deseamos al arraylist out
 		for (String index : marcas) {
 			for (ArrayList<String> par : paresModeloMarca) {
-				if (index.equals(par.get(0))){
+				if (index.equals(par.get(0)))
 					out.add(par);
-				}
 			}
 		}
 
@@ -80,10 +80,10 @@ public class Herramientas {
 	public static ArrayList<int[]> getBMIndexsPartitions() {
 		ArrayList<int[]> out = new ArrayList<int[]>();
 
-		int partLength = marcas.length / Constants.CANT_SCAN_THREADS;
+		int partLength = marcas.length / CANT_SCAN_THREADS;
 
-		for (int i = 0; i < Constants.CANT_SCAN_THREADS; i++) {
-			if (i != Constants.CANT_SCAN_THREADS - 1) {
+		for (int i = 0; i < CANT_SCAN_THREADS; i++) {
+			if (i != CANT_SCAN_THREADS - 1) {
 				out.add(new int[] { i * partLength, i * partLength + partLength });
 			} else {
 				out.add(new int[] { i * partLength, marcas.length }); // la
@@ -99,7 +99,7 @@ public class Herramientas {
 		return out;
 	}
 	
-	public static void restartApplication(Scanner scanner)
+	public static void restartApplication()
 	{
 	  final String javaBin = System.getProperty("java.home") + File.separator + "bin" + File.separator + "java";
 	  File currentJar;
@@ -107,29 +107,31 @@ public class Herramientas {
 	  try {		
 		  currentJar = new File(MainWindow.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 		  /* is it a jar file? */
-		  if(!currentJar.getName().endsWith(".jar"))
+		  if(!currentJar.getName().endsWith(".jar")){
+			  System.out.println(currentJar.getName());
 			  return;
-		  
-		  
+		  }
+
 		  /* Build command: java -jar application.jar */
 		  final ArrayList<String> command = new ArrayList<String>();
 		  command.add(javaBin);
 		  command.add("-jar");
 		  command.add(currentJar.getPath());
-		  
-		  scanner.saveLastScanDataToFile(true);
-		  
+
 		  final ProcessBuilder builder = new ProcessBuilder(command);
 		  builder.start();
 		  System.exit(0);
 		  System.out.println("No se pudo cerrar");
-		  } catch (URISyntaxException e) {			
+		  } catch (URISyntaxException e) {			  
+			  // TODO Auto-generated catch block
 			  e.printStackTrace();			  
 		  } catch (IOException e) {
+			  // TODO Auto-generated catch block
 			  e.printStackTrace();
 		}
 	}
 	
+
 	/** getLastTimeScanHour revisa el archivo lastTimeScanData y retorna un string
 	 * de forma HH/MM que representa la hora de la ultima vez que se realizo un scan
 	 * @return

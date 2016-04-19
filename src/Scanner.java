@@ -10,20 +10,22 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URL;
 import java.net.URLConnection;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+import com.sun.org.apache.xerces.internal.impl.xpath.regex.ParseException;
+
 public abstract class Scanner {
 
-	
+	protected String ZONA_HORARIA = "GMT-3";
+	protected final int ANO_ACTUAL = 2015;
 	protected int ANO_MIN = 2012; // cuidar que ANO_MIN sea mayor que 1960
 	protected int ANO_MAX = 2012;
 	protected int INDEX_PRECIO_MAX = 24;
 	protected int INDEX_PRECIO_MIN = 0;
-	protected int errorCounter = 0;
+	protected String REGION = "region_metropolitana";
+	protected final String COD_REGION = "15_s"; // region metropolitana
+	protected static int errorCounter = 0;
 	protected Integer endThreadCounter = 0;
 	protected volatile boolean runScan = true;
 	protected MainWindow context;
@@ -37,7 +39,6 @@ public abstract class Scanner {
 	 */
 
 	protected ArrayList<String[]> statistics = new ArrayList<String[]>();
-
 	/**
 	 * Este arreglo se rellena en GlobalScanner y se actualiza cada vez que se
 	 * mete un dato en LocalScanner.
@@ -54,40 +55,30 @@ public abstract class Scanner {
 	public Scanner(MainWindow _context){
 		this.context = _context;
 		emailSender = new Email(_context);
+		try{
+			this.ANO_MIN = Integer.parseInt(context.anoMin);
+			this.ANO_MAX = Integer.parseInt(context.anoMax);
+			this.INDEX_PRECIO_MIN = Integer.parseInt(context.indexPrecioMin);
+			this.INDEX_PRECIO_MAX = Integer.parseInt(context.indexPrecioMax);
+		}catch(ParseException e){}
 	}
 	
-	public void saveLastScanDataToFile(){
-		saveLastScanDataToFile(false);
-	}
-	
-	public void saveLastScanDataToFile(boolean shouldStartOver) {
+	public void saveLastScanDataToFile() {
 		Writer writer;
-		java.util.TimeZone tz = java.util.TimeZone.getTimeZone(Constants.ZONA_HORARIA);
-		java.util.Calendar cal = java.util.Calendar.getInstance(tz);
-		
-		System.out.println(cal.get(java.util.Calendar.HOUR_OF_DAY) + ":" + cal.get(java.util.Calendar.MINUTE) + ":"
-				+ cal.get(java.util.Calendar.SECOND));
+		java.util.TimeZone tz = java.util.TimeZone.getTimeZone(ZONA_HORARIA);
+		java.util.Calendar c = java.util.Calendar.getInstance(tz);
 
-		int mes = cal.get(Calendar.MONTH) + 1;
-		
-		String hh = cal.get(Calendar.HOUR_OF_DAY) + "";
-		String mm = cal.get(Calendar.MINUTE) + "";
-		String ss = cal.get(Calendar.SECOND) + "";
-		while(hh.length()<2)
-			hh = "0" + hh;
-		while(mm.length()<2)
-			mm = "0" + mm;
-		while(ss.length()<2)
-			ss = "0" + ss;
-		
-		String hora = hh + ":" + mm + ":" + ss;
-		String fecha = cal.get(Calendar.DAY_OF_MONTH) + "/" + mes + "/" + cal.get(Calendar.YEAR);
-		
+		System.out.println(c.get(java.util.Calendar.HOUR_OF_DAY) + ":" + c.get(java.util.Calendar.MINUTE) + ":"
+				+ c.get(java.util.Calendar.SECOND));
+
 		try {
 			writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("lastTimeData.txt"), "utf-8"));
-			writer.write("<HORA>" + hora + "</HORA>");
+			int mes = c.get(Calendar.MONTH) + 1;
+			writer.write("<HORA>" + c.get(Calendar.HOUR_OF_DAY) + ":" + c.get(Calendar.MINUTE) + ":"
+					+ c.get(Calendar.SECOND) + "</HORA>");
 			writer.write(System.getProperty("line.separator"));
-			writer.write("<FECHA>" + fecha + "</FECHA>");
+			writer.write(
+					"<FECHA>" + c.get(Calendar.DAY_OF_MONTH) + "-" + mes + "-" + c.get(Calendar.YEAR) + "</FECHA>");
 			writer.write(System.getProperty("line.separator"));
 			writer.write("<ANO MIN>" + ANO_MIN + "</ANO MIN>");
 			writer.write(System.getProperty("line.separator"));
@@ -96,8 +87,6 @@ public abstract class Scanner {
 			writer.write("<INDEX PRECIO MIN>" + INDEX_PRECIO_MIN + "</INDEX PRECIO MIN>");
 			writer.write(System.getProperty("line.separator"));
 			writer.write("<INDEX PRECIO MAX>" + INDEX_PRECIO_MAX + "</INDEX PRECIO MAX>");
-			writer.write(System.getProperty("line.separator"));
-			writer.write("<REINICIAR>" + shouldStartOver + "</REINICIAR>");
 			writer.close();
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
@@ -106,40 +95,6 @@ public abstract class Scanner {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		//#####################################################
-		
-		 
-		int restart = 0;
-		if (shouldStartOver)
-			restart = 1;
-		
-		Connection c = null;
-		Statement stmt = null;
-		try {
-			Class.forName("org.sqlite.JDBC");
-			c = DriverManager.getConnection("jdbc:sqlite:ProjectYapo.db");
-			c.setAutoCommit(false);
-			context.insertNewProgramCurrentState("Accediendo a la base de datos...", Color.BLACK, true);
-
-
-			stmt = c.createStatement();
-			String sql = "DELETE FROM UltimaBusqueda;";
-			stmt.executeUpdate(sql);
-			sql = "INSERT INTO UltimaBusqueda VALUES ('" + hora + "', '" + fecha + 
-					"', " + ANO_MIN + ", " + ANO_MAX + ", " + INDEX_PRECIO_MIN + 
-					", " + INDEX_PRECIO_MAX + ", " + restart + ");"; 
-			stmt.executeUpdate(sql);
-
-			stmt.close();
-			c.commit();
-			c.close();
-		} catch ( Exception e ) {
-			System.err.println( e.getClass().getName() + ": " + e.getMessage() );
-			System.exit(0);
-		}
-		context.insertNewProgramCurrentState("Datos de ultima busqueda guardados satisfactoriamente en la base de datos!", Color.GREEN, true);
-		//#####################################################
 	}
 
 	/**
@@ -164,14 +119,11 @@ public abstract class Scanner {
 				while ((inputLine = in.readLine()) != null)
 					a.append(inputLine);
 				in.close();
-				context.setConnectionStatus(true);
+
 				return a.toString();
 			}
 
 			catch (IOException e) {
-				
-				context.setConnectionStatus(false);
-				
 				maxTry--;
 				if (maxTry <= 0) {
 					if(!_url.equalsIgnoreCase("http://beatfan.site90.net/")){
@@ -181,6 +133,7 @@ public abstract class Scanner {
 					}
 					return "";
 				} else {
+					System.out.println("Buscando conexion...");
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e1) {

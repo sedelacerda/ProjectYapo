@@ -4,6 +4,8 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
@@ -41,11 +44,9 @@ import de.javasoft.plaf.synthetica.SyntheticaPlainLookAndFeel;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import java.util.Comparator;
-
 import java.awt.CardLayout;
 
 public class MainWindow {
-	
 	
 	private JFrame frame;
 	public String indexPrecioMin = Herramientas.getLastTimeScanMinPriceIndex();
@@ -160,7 +161,6 @@ public class MainWindow {
 		
 		for(int i=2; i<7; i++){
 			rowSorter.setComparator(i, new Comparator<String>() {
-				@Override
 				public int compare(String o1, String o2)
 				{
 					return Integer.parseInt(o1.replace(".","")) - Integer.parseInt(o2.replace(".",""));
@@ -220,7 +220,6 @@ public class MainWindow {
 		
 		JButton btnIniciar = new JButton("Iniciar");
 		btnIniciar.addActionListener(new ActionListener() {
-			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				
 				if(!isRunning){
@@ -307,8 +306,24 @@ public class MainWindow {
 		System.out.println(Herramientas.getLastTimeScanMinPriceIndex());
 		System.out.println(Herramientas.getLastTimeScanMaxPriceIndex());
 		System.out.println(Herramientas.getLastTimeScanShouldRestart());
+		
+		
+		
+		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		frame.addWindowListener(new WindowAdapter()
+		{
+			public void windowClosing(WindowEvent e)
+			{
+				String ObjButtons[] = {"Si","No"};
+		        int PromptResult = JOptionPane.showOptionDialog(null,"Está seguro de que desea salir?","Terminar",JOptionPane.DEFAULT_OPTION,JOptionPane.WARNING_MESSAGE,null,ObjButtons,ObjButtons[1]);
+		        if(PromptResult==JOptionPane.YES_OPTION)
+		        {
+		            System.exit(0);
+		        }
+			}
+		});
 	}
-	
+
 	public Class<?> getColumnClass(int columnIndex) {
 	    return Object.class;
 	}
@@ -414,8 +429,7 @@ public class MainWindow {
 		lblFaltanMinutos.setVisible(true);
 		lblFaltanMinutos.setText("Faltan 30 minutos para un nuevo scan");
 		
-		localScan = new LocalScanner(globalScan.getData(), globalScan.getStatistics(),
-				Integer.parseInt(anoMin), Integer.parseInt(anoMax), MainWindow.this);
+		localScan = new LocalScanner(globalScan.getData(), globalScan.getStatistics(), MainWindow.this);
 		localScan.run();
 	}
 		
@@ -431,6 +445,39 @@ public class MainWindow {
 	
 }
 
+//import java.awt.BorderLayout;
+//import java.awt.Color;
+//import java.awt.Dimension;
+//import java.awt.EventQueue;
+//import java.awt.Font;
+//import java.awt.event.ActionEvent;
+//import java.awt.event.ActionListener;
+//import java.io.IOException;
+//
+//import javax.swing.JButton;
+//import javax.swing.JFrame;
+//import javax.swing.JLabel;
+//import javax.swing.JPanel;
+//import javax.swing.JScrollPane;
+//import javax.swing.JSeparator;
+//import javax.swing.JSpinner;
+//import javax.swing.JTable;
+//import javax.swing.JTextArea;
+//import javax.swing.JToolBar;
+//import javax.swing.SpinnerListModel;
+//import javax.swing.UIManager;
+//import javax.swing.border.EmptyBorder;
+//import javax.swing.event.ChangeEvent;
+//import javax.swing.event.ChangeListener;
+//import javax.swing.table.DefaultTableModel;
+//
+//import com.jgoodies.forms.factories.FormFactory;
+//import com.jgoodies.forms.layout.ColumnSpec;
+//import com.jgoodies.forms.layout.FormLayout;
+//import com.jgoodies.forms.layout.RowSpec;
+//
+//public class MainWindow {
+//
 //	private JFrame frame;
 //	public static JTextArea TA_EstadoActual;
 //	public static JTable TB_Estadisticas;
@@ -439,7 +486,16 @@ public class MainWindow {
 //	public static JSpinner SR_AnoMax;
 //	public static JSpinner SR_PrecioMin;
 //	public static JSpinner SR_PrecioMax;
-//	
+//	public static Integer SR_PrecioMin_SelIndex = 0;
+//	public static Integer SR_PrecioMax_SelIndex = 0;
+//	public static String[] ListaPreciosMin = new String[] { "0", "100.000", "150.000", "200.000", "250.000", "300.000",
+//			"400.000", "500.000", "750.000", "1.000.000", "1.500.000", "2.000.000", "2.500.000", "3.000.000",
+//			"4.000.000", "5.000.000", "7.500.000", "10.000.000", "15.000.000", "20.000.000", "25.000.000", "30.000.000",
+//			"40.000.000", "50.000.000", "75.000.000" };
+//	public static String[] ListaPreciosMax = new String[] { "0", "100.000", "150.000", "200.000", "250.000", "300.000",
+//			"400.000", "500.000", "750.000", "1.000.000", "1.500.000", "2.000.000", "2.500.000", "3.000.000",
+//			"4.000.000", "5.000.000", "7.500.000", "10.000.000", "15.000.000", "20.000.000", "25.000.000", "30.000.000",
+//			"40.000.000", "50.000.000", "75.000.000", "+75.000.000" };
 //	public static Thread scanAll;
 //	public static boolean isScanningAll = false;
 //	public static GlobalScanner globalScan = new GlobalScanner();
@@ -496,7 +552,6 @@ public class MainWindow {
 //		frame = new JFrame();
 //		frame.setTitle("Project Yapo");
 //		frame.setBounds(100, 100, 800, 600);
-//		
 //		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //
 //		JToolBar TB_toolbar = new JToolBar();
@@ -531,8 +586,8 @@ public class MainWindow {
 //				globalScan = new GlobalScanner();
 //				globalScan.setAnoMinimo(Integer.parseInt(SR_AnoMin.getValue().toString()));
 //				globalScan.setAnoMaximo(Integer.parseInt(SR_AnoMax.getValue().toString()));
-//				globalScan.setIndexPrecioMaximo(getSelectedIndex(SR_PrecioMax, Constants.LISTA_PRECIOS_MAX));
-//				globalScan.setIndexPrecioMinimo(getSelectedIndex(SR_PrecioMin, Constants.LISTA_PRECIOS_MIN));
+//				globalScan.setIndexPrecioMaximo(getSelectedIndex(SR_PrecioMax, ListaPreciosMax));
+//				globalScan.setIndexPrecioMinimo(getSelectedIndex(SR_PrecioMin, ListaPreciosMin));
 //				MainWindow.isScanningAll = false;
 //			}
 //		});
@@ -551,7 +606,11 @@ public class MainWindow {
 //				globalScan.setAnoMinimo(Integer.parseInt(SR_AnoMin.getValue().toString()));
 //			}
 //		});
-//		SR_AnoMin.setModel(new SpinnerListModel(Constants.LISTA_ANOS_MIN));
+//		SR_AnoMin.setModel(new SpinnerListModel(new String[] { "1960", "1961", "1962", "1963", "1964", "1965", "1966",
+//				"1967", "1968", "1969", "1970", "1971", "1972", "1973", "1974", "1975", "1976", "1977", "1978", "1979",
+//				"1980", "1981", "1982", "1983", "1984", "1985", "1986", "1987", "1988", "1989", "1990", "1991", "1992",
+//				"1993", "1994", "1995", "1996", "1997", "1998", "1999", "2000", "2001", "2002", "2003", "2004", "2005",
+//				"2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015" }));
 //		SR_AnoMin.setValue("2015");
 //		TB_toolbar.add(SR_AnoMin);
 //
@@ -566,7 +625,11 @@ public class MainWindow {
 //				globalScan.setAnoMaximo(Integer.parseInt(SR_AnoMax.getValue().toString()));
 //			}
 //		});
-//		SR_AnoMax.setModel(new SpinnerListModel(Constants.LISTA_ANOS_MAX));
+//		SR_AnoMax.setModel(new SpinnerListModel(new String[] { "1960", "1961", "1962", "1963", "1964", "1965", "1966",
+//				"1967", "1968", "1969", "1970", "1971", "1972", "1973", "1974", "1975", "1976", "1977", "1978", "1979",
+//				"1980", "1981", "1982", "1983", "1984", "1985", "1986", "1987", "1988", "1989", "1990", "1991", "1992",
+//				"1993", "1994", "1995", "1996", "1997", "1998", "1999", "2000", "2001", "2002", "2003", "2004", "2005",
+//				"2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015" }));
 //		SR_AnoMax.setValue("2015");
 //		TB_toolbar.add(SR_AnoMax);
 //
@@ -578,10 +641,10 @@ public class MainWindow {
 //		SR_PrecioMin.addChangeListener(new ChangeListener() {
 //			@Override
 //			public void stateChanged(ChangeEvent arg0) {
-//				globalScan.setIndexPrecioMinimo(getSelectedIndex(SR_PrecioMin, Constants.LISTA_PRECIOS_MIN));
+//				globalScan.setIndexPrecioMinimo(getSelectedIndex(SR_PrecioMin, ListaPreciosMin));
 //			}
 //		});
-//		SR_PrecioMin.setModel(new SpinnerListModel(Constants.LISTA_PRECIOS_MIN));
+//		SR_PrecioMin.setModel(new SpinnerListModel(ListaPreciosMin));
 //		SR_PrecioMin.getModel().setValue("1.000.000");
 //		TB_toolbar.add(SR_PrecioMin);
 //
@@ -593,10 +656,10 @@ public class MainWindow {
 //		SR_PrecioMax.addChangeListener(new ChangeListener() {
 //			@Override
 //			public void stateChanged(ChangeEvent arg0) {
-//				globalScan.setIndexPrecioMaximo(getSelectedIndex(SR_PrecioMax, Constants.LISTA_PRECIOS_MAX));
+//				globalScan.setIndexPrecioMaximo(getSelectedIndex(SR_PrecioMax, ListaPreciosMax));
 //			}
 //		});
-//		SR_PrecioMax.setModel(new SpinnerListModel(Constants.LISTA_PRECIOS_MAX));
+//		SR_PrecioMax.setModel(new SpinnerListModel(ListaPreciosMax));
 //		SR_PrecioMax.getModel().setValue("+75.000.000");
 //		TB_toolbar.add(SR_PrecioMax);
 //
@@ -673,47 +736,10 @@ public class MainWindow {
 //				return columnEditables[column];
 //			}
 //		});
-//		
-//		MainWindow.TB_Recomendados.addMouseListener(new MouseAdapter() {
-//			  public void mouseClicked(MouseEvent e) {
-//
-//			        int row = TB_Recomendados.getSelectedRow();
-//			        int col = TB_Recomendados.getSelectedColumn();
-//
-//			        //build your address / link
-//
-//			        URI uri = null;
-//					try {
-//						String url = (String) TB_Recomendados.getModel().getValueAt(row, col);
-//						uri = new URI(url);
-//					} catch (URISyntaxException e1) {
-//						e1.printStackTrace();
-//					}
-//
-//			        //see below
-//					if(uri != null)
-//						open(uri);
-//			      }
-//			    });
-//		
 //		MainWindow.TB_Recomendados.setFillsViewportHeight(true);
 //		MainWindow.TB_Recomendados.setPreferredScrollableViewportSize(new Dimension(525, 100));
 //		SP_Recomendados.setViewportView(MainWindow.TB_Recomendados);
-//		
-//		//Lo siguiente hace que se inicie automaticamente el programa
-//		if(Herramientas.getLastTimeScanShouldRestart())
-//			restartGlobalScan();
-//		
 //	}
-//	
-//	//Then elsewhere as from the McDowell answer
-//	private static void open(URI uri) {
-//	  if (Desktop.isDesktopSupported()) {
-//	    try {
-//	       Desktop.getDesktop().browse(uri);
-//	      } catch (IOException e) { /* TODO: error handling */ }
-//	   } else { /* TODO: error handling */ }
-//	 }
 //
 //	public static void runGlobalScanner() {
 //
@@ -807,35 +833,6 @@ public class MainWindow {
 //		localScan = new LocalScanner(globalScan.getData(), globalScan.getStatistics(),
 //				Integer.parseInt(SR_AnoMin.getValue().toString()), Integer.parseInt(SR_AnoMax.getValue().toString()));
 //		localScan.run();
-//	}
-//	
-//	public void recoverLastTimeScanDataToGUI(){
-//		try{
-//			SR_PrecioMin.getModel().setValue(Constants.LISTA_PRECIOS_MIN[Integer.parseInt(Herramientas.getLastTimeScanMinPriceIndex())]);
-//			SR_PrecioMax.getModel().setValue(Constants.LISTA_PRECIOS_MAX[Integer.parseInt(Herramientas.getLastTimeScanMaxPriceIndex())]);
-//			SR_AnoMin.getModel().setValue(Herramientas.getLastTimeScanMinYear());
-//			SR_AnoMax.getModel().setValue(Herramientas.getLastTimeScanMaxYear());
-//		}
-//		catch(ParseException e){
-//			System.out.println("No se pudo cargar la informacion del ultimo scan realizado.");
-//		}
-//		
-//		
-//	}
-//	
-//	public void restartGlobalScan(){
-//		java.util.Date actual = new java.util.Date();
-//		
-//		insertNewProgramCurrentState("Se ha iniciado una nueva instancia del programa a las " + new Timestamp(actual.getTime()), Color.BLACK);
-//		recoverLastTimeScanDataToGUI();
-//		Scanner.saveLastScanDataToFile(false);
-//		if(Security.unlock("lmcxkm3p2k39")){
-//			if (!MainWindow.isScanningAll) {
-//				isScanningAll = true;
-//				
-//				runGlobalScanner();
-//			}
-//		}
 //	}
 //
 //}
